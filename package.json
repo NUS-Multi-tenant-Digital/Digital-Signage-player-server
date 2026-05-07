@@ -1,0 +1,28 @@
+{
+  "name": "player-application-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Player Application server scaffold for registration, manifest sync, asset delivery and device telemetry.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "check": "tsc --noEmit",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "fastify": "^5.3.3",
+    "mysql2": "^3.22.3",
+    "redis": "^5.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
