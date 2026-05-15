@@ -1,0 +1,31 @@
+server:
+  port: 3000
+
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/player_application_server?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+app:
+  jwt-secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef}
+  aliyun:
+    oss:
+      endpoint: ${ALIYUN_OSS_ENDPOINT:https://oss-ap-southeast-1.aliyuncs.com}
+      bucket: ${ALIYUN_OSS_BUCKET:digital-signage-media}
+      region: ${ALIYUN_OSS_REGION:ap-southeast-1}
+      access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID:}
+      access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:}
+  storage-public-base-url: ${STORAGE_PUBLIC_BASE_URL:https://media.digital-signage.ltd}

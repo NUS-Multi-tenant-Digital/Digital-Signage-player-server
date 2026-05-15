@@ -1,0 +1,76 @@
+package com.digitalsignage.playerserver.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "manifest_assets")
+public class ManifestAsset {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "manifest_id", nullable = false, length = 64)
+    private String manifestId;
+
+    @Column(name = "asset_id", nullable = false, length = 64)
+    private String assetId;
+
+    @Column(name = "required", nullable = false)
+    private boolean required;
+
+    @Column(name = "priority", nullable = false)
+    private int priority;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getManifestId() {
+        return manifestId;
+    }
+
+    public void setManifestId(String manifestId) {
+        this.manifestId = manifestId;
+    }
+
+    public String getAssetId() {
+        return assetId;
+    }
+
+    public void setAssetId(String assetId) {
+        this.assetId = assetId;
+    }
+
+    public boolean isRequired() {
+        return required;
+    }
+
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}

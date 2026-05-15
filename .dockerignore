@@ -1,0 +1,12 @@
+target
+.env
+.env.*
+.git
+.gitignore
+.idea
+.vscode
+docs
+coverage
+*.md
+*.log
+*_extracted.txt
