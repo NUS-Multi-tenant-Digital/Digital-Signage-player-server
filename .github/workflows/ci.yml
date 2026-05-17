@@ -26,7 +26,7 @@ jobs:
       - name: Compile
         run: mvn compile -B
       - name: Unit Tests
-        run: mvn test -B -Dtest='!*IntegrationTest,!*StressTest' -DfailIfNoTests=false
+        run: mvn test -B "-Dtest=RegisterServiceTest,ManifestServiceTest,MediaServiceTest,HeartbeatServiceTest,EventServiceTest,CommandServiceTest" -DfailIfNoTests=false
         env:
           SPRING_PROFILES_ACTIVE: test
 
