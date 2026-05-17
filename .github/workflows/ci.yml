@@ -26,7 +26,7 @@ jobs:
       - name: Compile
         run: mvn compile -B
       - name: Unit Tests
-        run: mvn test -B -Dtest="com.digitalsignage.playerserver.service.*" -DfailIfNoTests=false
+        run: mvn test -B -Dtest='!*IntegrationTest,!*StressTest' -DfailIfNoTests=false
         env:
           SPRING_PROFILES_ACTIVE: test
 
