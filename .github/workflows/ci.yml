@@ -26,7 +26,7 @@ jobs:
       - name: Compile
         run: mvn compile -B
       - name: Unit Tests
-        run: mvn test -B
+        run: mvn test -B -Dtest="com.digitalsignage.playerserver.service.*" -DfailIfNoTests=false
         env:
           SPRING_PROFILES_ACTIVE: test
 
@@ -69,8 +69,8 @@ jobs:
         run: |
           mysql -h 127.0.0.1 -u root -ptestpass digital_signage < sql/schema.sql
           mysql -h 127.0.0.1 -u root -ptestpass digital_signage < sql/mvp_seed.sql
-      - name: Run integration tests
-        run: mvn verify -B -Dtest="*IntegrationTest" -DfailIfNoTests=false
+      - name: Run integration & stress tests
+        run: mvn verify -B -Dtest="*IntegrationTest,*StressTest" -DfailIfNoTests=false
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/digital_signage?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
           SPRING_DATASOURCE_USERNAME: root
