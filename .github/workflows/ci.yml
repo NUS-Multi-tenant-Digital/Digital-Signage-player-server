@@ -72,9 +72,13 @@ jobs:
       - name: Run integration & stress tests
         run: mvn verify -B -Dtest="*IntegrationTest,*StressTest" -DfailIfNoTests=false
         env:
+          SPRING_PROFILES_ACTIVE: ci
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/digital_signage?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: testpass
+          SPRING_JPA_HIBERNATE_DDL_AUTO: none
+          SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
           SPRING_DATA_REDIS_HOST: 127.0.0.1
           SPRING_DATA_REDIS_PORT: 6379
 
@@ -157,8 +161,11 @@ jobs:
           java -jar target/*.jar &
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/digital_signage?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: testpass
+          SPRING_JPA_HIBERNATE_DDL_AUTO: none
+          SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
           SPRING_DATA_REDIS_HOST: 127.0.0.1
           SPRING_DATA_REDIS_PORT: 6379
           SERVER_PORT: 3000
