@@ -4,12 +4,15 @@ import com.digitalsignage.playerserver.dto.request.HeartbeatRequest;
 import com.digitalsignage.playerserver.dto.response.HeartbeatResponse;
 import com.digitalsignage.playerserver.entity.Command;
 import com.digitalsignage.playerserver.entity.PlayerConfig;
+import com.digitalsignage.playerserver.entity.Screen;
 import com.digitalsignage.playerserver.repository.CommandRepository;
 import com.digitalsignage.playerserver.repository.PlayerConfigRepository;
+import com.digitalsignage.playerserver.repository.ScreenRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -18,15 +21,18 @@ public class HeartbeatService {
 
     private final PlayerConfigRepository playerConfigRepository;
     private final CommandRepository commandRepository;
+    private final ScreenRepository screenRepository;
     private final RedisOperations<String, Object> redisOperations;
     private final ObjectMapper objectMapper;
 
     public HeartbeatService(PlayerConfigRepository playerConfigRepository,
                             CommandRepository commandRepository,
+                            ScreenRepository screenRepository,
                             RedisOperations<String, Object> redisOperations,
                             ObjectMapper objectMapper) {
         this.playerConfigRepository = playerConfigRepository;
         this.commandRepository = commandRepository;
+        this.screenRepository = screenRepository;
         this.redisOperations = redisOperations;
         this.objectMapper = objectMapper;
     }
@@ -34,15 +40,34 @@ public class HeartbeatService {
     public HeartbeatResponse reportHeartbeat(HeartbeatRequest req) {
         long now = System.currentTimeMillis();
 
-        // Get heartbeat interval from config (needed for TTL calculation)
-        PlayerConfig config = playerConfigRepository.findByDeviceId(req.getDeviceId()).orElse(null);
+        // Resolve deviceCode (external device_id) to screen
+        Screen screen = screenRepository.findByDeviceCode(req.getDeviceId()).orElse(null);
+        if (screen == null) {
+            HeartbeatResponse resp = new HeartbeatResponse();
+            resp.setSuccess(false);
+            resp.setNextIntervalSec(30);
+            resp.setCommands(List.of());
+            return resp;
+        }
+
+        Long screenId = screen.getId();
+        String deviceCode = screen.getDeviceCode();
+
+        // Update screen's last heartbeat
+        screen.setLastHeartbeatAt(LocalDateTime.now());
+        screen.setAppVersion(req.getAppVersion());
+        screen.setUpdatedAt(LocalDateTime.now());
+        screenRepository.save(screen);
+
+        // Get heartbeat interval from config
+        PlayerConfig config = playerConfigRepository.findByScreenId(screenId).orElse(null);
         int nextIntervalSec = config != null ? config.getHeartbeatIntervalSec() : 30;
 
         // Save heartbeat to Redis with TTL = 3x heartbeat interval
-        // If no heartbeat arrives within this window, the key expires → device is considered offline
-        String hbKey = "heartbeat:" + req.getDeviceId();
+        String hbKey = "heartbeat:" + deviceCode;
         Map<String, Object> hbData = new LinkedHashMap<>();
-        hbData.put("deviceId", req.getDeviceId());
+        hbData.put("deviceCode", deviceCode);
+        hbData.put("screenId", screenId);
         hbData.put("lastHeartbeatAt", req.getTimestamp());
         hbData.put("appVersion", req.getAppVersion());
         hbData.put("manifestId", req.getManifestId());
@@ -57,11 +82,12 @@ public class HeartbeatService {
         redisOperations.opsForHash().putAll(hbKey, hbData);
         redisOperations.expire(hbKey, nextIntervalSec * 3L, TimeUnit.SECONDS);
 
-        // Update sync state (no TTL, persistent until device is deregistered)
-        String syncKey = "sync_state:" + req.getDeviceId();
+        // Update sync state
+        String syncKey = "sync_state:" + deviceCode;
         Map<Object, Object> current = redisOperations.opsForHash().entries(syncKey);
         Map<String, Object> syncState = new HashMap<>();
-        syncState.put("deviceId", req.getDeviceId());
+        syncState.put("deviceCode", deviceCode);
+        syncState.put("screenId", screenId);
         syncState.put("manifestVersion", req.getManifestVersion());
         syncState.put("lastOnlineAt", req.getTimestamp());
         if (current.containsKey("lastSyncAt")) {
@@ -70,13 +96,13 @@ public class HeartbeatService {
         redisOperations.opsForHash().putAll(syncKey, syncState);
 
         // Mark device online status
-        String onlineKey = "device:online:" + req.getDeviceId();
+        String onlineKey = "device:online:" + deviceCode;
         redisOperations.opsForValue().set(onlineKey, String.valueOf(now));
         redisOperations.expire(onlineKey, nextIntervalSec * 3L, TimeUnit.SECONDS);
 
-        // Get pending commands
+        // Get pending commands by screenId
         List<Command> pending = commandRepository
-                .findByDeviceIdAndStatusAndExpireAtGreaterThan(req.getDeviceId(), "pending", now);
+                .findByScreenIdAndStatusAndExpireAtGreaterThan(screenId, "pending", now);
 
         // Build response
         HeartbeatResponse resp = new HeartbeatResponse();
@@ -102,11 +128,8 @@ public class HeartbeatService {
         return resp;
     }
 
-    /**
-     * 判断设备是否在线（Redis key 是否存在）
-     */
-    public boolean isDeviceOnline(String deviceId) {
-        String onlineKey = "device:online:" + deviceId;
+    public boolean isDeviceOnline(String deviceCode) {
+        String onlineKey = "device:online:" + deviceCode;
         return Boolean.TRUE.equals(redisOperations.hasKey(onlineKey));
     }
 }

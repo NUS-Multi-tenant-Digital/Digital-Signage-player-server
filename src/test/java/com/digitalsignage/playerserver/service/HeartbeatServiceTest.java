@@ -4,8 +4,10 @@ import com.digitalsignage.playerserver.dto.request.HeartbeatRequest;
 import com.digitalsignage.playerserver.dto.response.HeartbeatResponse;
 import com.digitalsignage.playerserver.entity.Command;
 import com.digitalsignage.playerserver.entity.PlayerConfig;
+import com.digitalsignage.playerserver.entity.Screen;
 import com.digitalsignage.playerserver.repository.CommandRepository;
 import com.digitalsignage.playerserver.repository.PlayerConfigRepository;
+import com.digitalsignage.playerserver.repository.ScreenRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +36,7 @@ class HeartbeatServiceTest {
 
     @Mock private PlayerConfigRepository playerConfigRepository;
     @Mock private CommandRepository commandRepository;
+    @Mock private ScreenRepository screenRepository;
     @Mock private RedisOperations<String, Object> redisOperations;
     @Mock private HashOperations<String, Object, Object> hashOperations;
     @Mock private ValueOperations<String, Object> valueOperations;
@@ -41,18 +44,27 @@ class HeartbeatServiceTest {
     private HeartbeatService heartbeatService;
     private ObjectMapper objectMapper = new ObjectMapper();
 
+    private Screen testScreen;
+
     @BeforeEach
     void setUp() {
         when(redisOperations.opsForHash()).thenReturn(hashOperations);
         when(redisOperations.opsForValue()).thenReturn(valueOperations);
         when(hashOperations.entries(anyString())).thenReturn(new HashMap<>());
-        heartbeatService = new HeartbeatService(playerConfigRepository, commandRepository, redisOperations, objectMapper);
+
+        testScreen = new Screen();
+        testScreen.setId(1L);
+        testScreen.setDeviceCode("d1");
+
+        when(screenRepository.findByDeviceCode("d1")).thenReturn(Optional.of(testScreen));
+
+        heartbeatService = new HeartbeatService(playerConfigRepository, commandRepository, screenRepository, redisOperations, objectMapper);
     }
 
     @Test
     @DisplayName("心跳正常 - 无 pending commands")
     void heartbeat_noPendingCommands() {
-        when(commandRepository.findByDeviceIdAndStatusAndExpireAtGreaterThan(eq("d1"), eq("pending"), anyLong()))
+        when(commandRepository.findByScreenIdAndStatusAndExpireAtGreaterThan(eq(1L), eq("pending"), anyLong()))
                 .thenReturn(Collections.emptyList());
 
         HeartbeatRequest req = new HeartbeatRequest();
@@ -79,7 +91,7 @@ class HeartbeatServiceTest {
         cmd.setExpireAt(System.currentTimeMillis() + 60000);
         cmd.setPayloadJson("{}");
 
-        when(commandRepository.findByDeviceIdAndStatusAndExpireAtGreaterThan(eq("d1"), eq("pending"), anyLong()))
+        when(commandRepository.findByScreenIdAndStatusAndExpireAtGreaterThan(eq(1L), eq("pending"), anyLong()))
                 .thenReturn(List.of(cmd));
 
         HeartbeatRequest req = new HeartbeatRequest();
@@ -101,8 +113,8 @@ class HeartbeatServiceTest {
     void heartbeat_usesConfigInterval() {
         PlayerConfig config = new PlayerConfig();
         config.setHeartbeatIntervalSec(45);
-        when(playerConfigRepository.findByDeviceId("d1")).thenReturn(Optional.of(config));
-        when(commandRepository.findByDeviceIdAndStatusAndExpireAtGreaterThan(eq("d1"), eq("pending"), anyLong()))
+        when(playerConfigRepository.findByScreenId(1L)).thenReturn(Optional.of(config));
+        when(commandRepository.findByScreenIdAndStatusAndExpireAtGreaterThan(eq(1L), eq("pending"), anyLong()))
                 .thenReturn(Collections.emptyList());
 
         HeartbeatRequest req = new HeartbeatRequest();

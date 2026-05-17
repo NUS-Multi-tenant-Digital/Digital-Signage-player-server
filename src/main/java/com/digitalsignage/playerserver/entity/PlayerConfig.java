@@ -11,14 +11,8 @@ public class PlayerConfig {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "device_id", nullable = false, unique = true, length = 64)
-    private String deviceId;
-
-    @Column(name = "tenant_id", nullable = false, length = 64)
-    private String tenantId;
-
-    @Column(name = "location_id", nullable = false, length = 64)
-    private String locationId;
+    @Column(name = "screen_id", nullable = false, unique = true)
+    private Long screenId;
 
     @Column(name = "heartbeat_interval_sec", nullable = false)
     private int heartbeatIntervalSec;
@@ -64,28 +58,12 @@ public class PlayerConfig {
         this.id = id;
     }
 
-    public String getDeviceId() {
-        return deviceId;
+    public Long getScreenId() {
+        return screenId;
     }
 
-    public void setDeviceId(String deviceId) {
-        this.deviceId = deviceId;
-    }
-
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
-    }
-
-    public String getLocationId() {
-        return locationId;
-    }
-
-    public void setLocationId(String locationId) {
-        this.locationId = locationId;
+    public void setScreenId(Long screenId) {
+        this.screenId = screenId;
     }
 
     public int getHeartbeatIntervalSec() {

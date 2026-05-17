@@ -2,89 +2,57 @@ USE player_application_server;
 
 SET NAMES utf8mb4;
 
--- Fixed sample scope for MVP Day 1:
--- - 1 web device
+-- ============================================================
+-- MVP Seed Data
+-- - 1 screen (web player)
 -- - 1 player config
+-- - 2 media items (main video + fallback image)
 -- - 1 manifest
--- - 2 assets (main video + fallback image)
--- - 1 template only: TEMPLATE_VIDEO_WITH_BOTTOM_TEXT
+-- - 2 manifest_media entries
+-- ============================================================
 
-DELETE FROM command_acks
-WHERE device_id = 'device_web_lobby_001';
+-- Clean up existing seed data
+DELETE FROM command_acks WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
+DELETE FROM commands WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
+DELETE FROM device_events WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
+DELETE FROM manifest_media WHERE manifest_id = 'manifest_web_lobby_v1';
+DELETE FROM manifests WHERE manifest_id = 'manifest_web_lobby_v1';
+DELETE FROM player_configs WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
+DELETE FROM screen WHERE device_code = 'device_web_lobby_001';
+DELETE FROM media WHERE object_key IN ('mvp/lobby_promo_main.mp4', 'mvp/fallback_poster.png');
 
-DELETE FROM commands
-WHERE device_id = 'device_web_lobby_001';
-
-DELETE FROM device_events
-WHERE device_id = 'device_web_lobby_001';
-
-DELETE FROM manifest_assets
-WHERE manifest_id = 'manifest_web_lobby_v1';
-
-DELETE FROM manifests
-WHERE manifest_id = 'manifest_web_lobby_v1';
-
-DELETE FROM player_configs
-WHERE device_id = 'device_web_lobby_001';
-
-DELETE FROM devices
-WHERE device_id = 'device_web_lobby_001';
-
-DELETE FROM assets
-WHERE asset_id IN ('asset_video_lobby_001', 'asset_fallback_image_001');
-
-INSERT INTO devices (
-  device_id,
-  tenant_id,
-  location_id,
-  group_id,
-  device_sn,
+-- Insert screen
+INSERT INTO screen (
+  device_code,
+  device_token,
+  organization_id,
+  name,
   activation_code,
-  device_name,
-  platform,
+  activation_status,
+  status,
+  last_heartbeat_at,
   app_version,
-  os_version,
-  firmware_version,
-  screen_resolution,
-  timezone,
-  mac_address,
-  ip_address,
-  capabilities_json,
-  access_token,
-  token_expire_at,
-  status
+  resolution_width,
+  resolution_height
 ) VALUES (
   'device_web_lobby_001',
-  'tenant_demo',
-  'location_lobby_001',
-  'group_lobby',
-  'SN_WEB_LOBBY_001',
-  'ACTIVATE_WEB_001',
+  'mvp-device-token-web-lobby-001',
+  1,
   'Lobby Web Player',
-  'PLATFORM_WEB',
+  'ACTIVATE_WEB_001',
+  'activated',
+  'active',
+  NOW(6),
   '0.1.0',
-  'Chrome 136',
-  NULL,
-  '1920x1080',
-  'Asia/Shanghai',
-  '02:00:00:00:10:01',
-  '10.0.0.21',
-  JSON_OBJECT(
-    'video', true,
-    'image', true,
-    'text', true,
-    'offline_cache', true,
-    'screenshot', false
-  ),
-  'mvp-access-token-device-web-lobby-001',
-  1893456000000,
-  'active'
+  1920,
+  1080
 );
 
+SET @screen_id = LAST_INSERT_ID();
+
+-- Insert player config
 INSERT INTO player_configs (
-  device_id,
-  tenant_id,
-  location_id,
+  screen_id,
   heartbeat_interval_sec,
   manifest_sync_interval_sec,
   event_flush_interval_sec,
@@ -96,9 +64,7 @@ INSERT INTO player_configs (
   log_level,
   supported_asset_types_json
 ) VALUES (
-  'device_web_lobby_001',
-  'tenant_demo',
-  'location_lobby_001',
+  @screen_id,
   30,
   60,
   30,
@@ -111,73 +77,54 @@ INSERT INTO player_configs (
   JSON_ARRAY('ASSET_VIDEO', 'ASSET_IMAGE')
 );
 
-INSERT INTO assets (
-  asset_id,
-  tenant_id,
-  asset_type,
-  file_name,
-  asset_ref,
-  oss_path,
-  cdn_path,
-  mime_type,
-  size_bytes,
-  sha256,
-  duration_ms,
-  width,
-  height,
-  expire_at,
-  metadata_json
+-- Insert media items
+INSERT INTO media (
+  organization_id,
+  media_type,
+  name,
+  object_key,
+  file_url,
+  thumbnail_url,
+  file_size_bytes,
+  duration_seconds,
+  checksum_sha256
 ) VALUES
 (
-  'asset_video_lobby_001',
-  'tenant_demo',
+  1,
   'ASSET_VIDEO',
   'lobby_promo_main.mp4',
-  'cdn://mvp/lobby_promo_main.mp4',
-  'oss://player-assets/mvp/lobby_promo_main.mp4',
+  'mvp/lobby_promo_main.mp4',
   'https://cdn.example.com/mvp/lobby_promo_main.mp4',
-  'video/mp4',
-  15728640,
-  '1111111111111111111111111111111111111111111111111111111111111111',
-  15000,
-  1920,
-  1080,
   NULL,
-  JSON_OBJECT('scene', 'lobby', 'usage', 'main_video')
+  15728640,
+  15,
+  '1111111111111111111111111111111111111111111111111111111111111111'
 ),
 (
-  'asset_fallback_image_001',
-  'tenant_demo',
+  1,
   'ASSET_IMAGE',
   'fallback_poster.png',
-  'cdn://mvp/fallback_poster.png',
-  'oss://player-assets/mvp/fallback_poster.png',
+  'mvp/fallback_poster.png',
   'https://cdn.example.com/mvp/fallback_poster.png',
-  'image/png',
-  204800,
-  '2222222222222222222222222222222222222222222222222222222222222222',
-  0,
-  1920,
-  1080,
   NULL,
-  JSON_OBJECT('scene', 'lobby', 'usage', 'fallback')
+  204800,
+  0,
+  '2222222222222222222222222222222222222222222222222222222222222222'
 );
 
+SET @media_video_id = LAST_INSERT_ID();
+SET @media_image_id = @media_video_id + 1;
+
+-- Insert manifest
 INSERT INTO manifests (
   manifest_id,
   version,
-  tenant_id,
-  device_id,
-  location_id,
-  group_id,
+  screen_id,
+  organization_id,
+  layout_id,
   valid_from,
   valid_to,
   ttl_sec,
-  template_id,
-  template_version,
-  design_width,
-  design_height,
-  play_mode,
   template_config_json,
   playback_plan_json,
   cache_policy_json,
@@ -188,18 +135,12 @@ INSERT INTO manifests (
 ) VALUES (
   'manifest_web_lobby_v1',
   1,
-  'tenant_demo',
-  'device_web_lobby_001',
-  'location_lobby_001',
-  'group_lobby',
+  @screen_id,
+  1,
+  NULL,
   1779000000000,
   0,
   3600,
-  'TEMPLATE_VIDEO_WITH_BOTTOM_TEXT',
-  '1.0.0',
-  1920,
-  1080,
-  'PLAY_MODE_LOOP',
   JSON_OBJECT(
     'template_id', 'TEMPLATE_VIDEO_WITH_BOTTOM_TEXT',
     'template_version', '1.0.0',
@@ -231,7 +172,7 @@ INSERT INTO manifests (
           JSON_OBJECT(
             'slot_id', 'main_video',
             'content_type', 'CONTENT_ASSET',
-            'asset_id', 'asset_video_lobby_001',
+            'media_id', @media_video_id,
             'text', '',
             'display_policy', JSON_OBJECT(
               'object_fit', 'cover',
@@ -242,7 +183,7 @@ INSERT INTO manifests (
           JSON_OBJECT(
             'slot_id', 'bottom_text',
             'content_type', 'CONTENT_TEXT',
-            'asset_id', '',
+            'media_id', NULL,
             'text', 'Welcome to our store',
             'display_policy', JSON_OBJECT(
               'object_fit', 'fill',
@@ -260,7 +201,7 @@ INSERT INTO manifests (
     'allow_delete_unused_assets', true
   ),
   JSON_OBJECT(
-    'fallback_asset_id', 'asset_fallback_image_001',
+    'fallback_media_id', @media_image_id,
     'fallback_text', 'Content temporarily unavailable',
     'max_retry_count', 3,
     'retry_interval_sec', 10,
@@ -272,21 +213,22 @@ INSERT INTO manifests (
   1
 );
 
-INSERT INTO manifest_assets (
+-- Insert manifest_media entries
+INSERT INTO manifest_media (
   manifest_id,
-  asset_id,
-  required,
+  media_id,
+  `required`,
   priority
 ) VALUES
 (
   'manifest_web_lobby_v1',
-  'asset_video_lobby_001',
+  @media_video_id,
   1,
   10
 ),
 (
   'manifest_web_lobby_v1',
-  'asset_fallback_image_001',
+  @media_image_id,
   0,
   1
 );

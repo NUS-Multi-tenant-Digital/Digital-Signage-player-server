@@ -6,5 +6,5 @@ import java.util.Optional;
 
 public interface ManifestRepository extends JpaRepository<Manifest, Long> {
     Optional<Manifest> findByManifestId(String manifestId);
-    Optional<Manifest> findFirstByDeviceIdOrderByIsActiveDescVersionDesc(String deviceId);
+    Optional<Manifest> findFirstByScreenIdOrderByIsActiveDescVersionDesc(Long screenId);
 }

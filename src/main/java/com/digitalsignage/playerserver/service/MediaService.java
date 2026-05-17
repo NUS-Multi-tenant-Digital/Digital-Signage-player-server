@@ -2,56 +2,65 @@ package com.digitalsignage.playerserver.service;
 
 import com.digitalsignage.playerserver.dto.request.BatchGetAssetUrlRequest;
 import com.digitalsignage.playerserver.dto.response.BatchAssetUrlResponse;
-import com.digitalsignage.playerserver.entity.Asset;
+import com.digitalsignage.playerserver.entity.Media;
 import com.digitalsignage.playerserver.entity.Manifest;
-import com.digitalsignage.playerserver.repository.AssetRepository;
+import com.digitalsignage.playerserver.entity.Screen;
+import com.digitalsignage.playerserver.repository.MediaRepository;
 import com.digitalsignage.playerserver.repository.ManifestRepository;
+import com.digitalsignage.playerserver.repository.ScreenRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
-public class AssetService {
+public class MediaService {
 
-    private final AssetRepository assetRepository;
+    private final MediaRepository mediaRepository;
     private final ManifestRepository manifestRepository;
+    private final ScreenRepository screenRepository;
     private final ObjectMapper objectMapper;
     private final OssService ossService;
 
     private static final long DEFAULT_URL_EXPIRE_MS = 10 * 60 * 1000L;
 
-    public AssetService(AssetRepository assetRepository,
+    public MediaService(MediaRepository mediaRepository,
                         ManifestRepository manifestRepository,
+                        ScreenRepository screenRepository,
                         ObjectMapper objectMapper,
                         OssService ossService) {
-        this.assetRepository = assetRepository;
+        this.mediaRepository = mediaRepository;
         this.manifestRepository = manifestRepository;
+        this.screenRepository = screenRepository;
         this.objectMapper = objectMapper;
         this.ossService = ossService;
     }
 
     public BatchAssetUrlResponse batchGetAssetUrls(BatchGetAssetUrlRequest req) {
-        List<Asset> assets = assetRepository.findByAssetIdIn(req.getAssetIds());
+        // Parse asset_ids as media IDs (Long)
+        List<Long> mediaIds = req.getAssetIds().stream()
+                .map(id -> {
+                    try { return Long.parseLong(id); } catch (NumberFormatException e) { return null; }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        List<Media> mediaList = mediaRepository.findByIdIn(mediaIds);
         long now = System.currentTimeMillis();
 
         long urlExpireMs = resolveUrlExpireMs(req.getDeviceId(), req.getManifestId());
 
         List<BatchAssetUrlResponse.AssetUrlItem> items = new ArrayList<>();
-        for (Asset asset : assets) {
+        for (Media media : mediaList) {
             BatchAssetUrlResponse.AssetUrlItem item = new BatchAssetUrlResponse.AssetUrlItem();
-            item.setAssetId(asset.getAssetId());
+            item.setAssetId(String.valueOf(media.getId()));
 
-            // URL resolution priority:
-            // 1. CDN path (direct, no signing needed)
-            // 2. OSS signed URL (if OSS configured)
-            // 3. Public base URL + oss path
-            // 4. Raw oss_path as fallback
-            String url = resolveDownloadUrl(asset, urlExpireMs);
+            String url = resolveDownloadUrl(media, urlExpireMs);
             item.setDownloadUrl(url);
-            item.setExpireAt(asset.getExpireAt() != null ? asset.getExpireAt() : now + urlExpireMs);
-            item.setSha256(asset.getSha256());
-            item.setSizeBytes(asset.getSizeBytes());
+            item.setExpireAt(now + urlExpireMs);
+            item.setSha256(media.getChecksumSha256());
+            item.setSizeBytes(media.getFileSizeBytes() != null ? media.getFileSizeBytes() : 0);
             items.add(item);
         }
 
@@ -60,33 +69,33 @@ public class AssetService {
         return resp;
     }
 
-    private String resolveDownloadUrl(Asset asset, long urlExpireMs) {
-        // 1. CDN path takes priority (already a public URL)
-        if (asset.getCdnPath() != null && !asset.getCdnPath().isEmpty()) {
-            return asset.getCdnPath();
+    private String resolveDownloadUrl(Media media, long urlExpireMs) {
+        // 1. file_url takes priority (already a public URL / CDN URL)
+        if (media.getFileUrl() != null && !media.getFileUrl().isEmpty()) {
+            return media.getFileUrl();
         }
 
-        String ossPath = asset.getOssPath();
-        if (ossPath == null || ossPath.isEmpty()) {
-            return "https://cdn.example.com/assets/" + asset.getAssetId();
+        String objectKey = media.getObjectKey();
+        if (objectKey == null || objectKey.isEmpty()) {
+            return "https://cdn.example.com/media/" + media.getId();
         }
 
         // 2. Generate signed URL via Aliyun OSS SDK
         if (ossService.isEnabled()) {
-            String signedUrl = ossService.generateSignedUrl(ossPath, urlExpireMs);
+            String signedUrl = ossService.generateSignedUrl(objectKey, urlExpireMs);
             if (signedUrl != null) {
                 return signedUrl;
             }
         }
 
         // 3. Use public base URL if configured
-        String publicUrl = ossService.getPublicUrl(ossPath);
+        String publicUrl = ossService.getPublicUrl(objectKey);
         if (publicUrl != null) {
             return publicUrl;
         }
 
         // 4. Fallback to raw path
-        return ossPath;
+        return objectKey;
     }
 
     @SuppressWarnings("unchecked")
@@ -96,7 +105,13 @@ public class AssetService {
             if (manifestId != null && !manifestId.isEmpty()) {
                 manifestOpt = manifestRepository.findByManifestId(manifestId);
             } else if (deviceId != null) {
-                manifestOpt = manifestRepository.findFirstByDeviceIdOrderByIsActiveDescVersionDesc(deviceId);
+                // Resolve deviceCode to screenId
+                Screen screen = screenRepository.findByDeviceCode(deviceId).orElse(null);
+                if (screen != null) {
+                    manifestOpt = manifestRepository.findFirstByScreenIdOrderByIsActiveDescVersionDesc(screen.getId());
+                } else {
+                    return DEFAULT_URL_EXPIRE_MS;
+                }
             } else {
                 return DEFAULT_URL_EXPIRE_MS;
             }

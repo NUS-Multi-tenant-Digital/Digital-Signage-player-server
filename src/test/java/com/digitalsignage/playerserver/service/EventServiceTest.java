@@ -3,7 +3,9 @@ package com.digitalsignage.playerserver.service;
 import com.digitalsignage.playerserver.dto.request.ReportEventsRequest;
 import com.digitalsignage.playerserver.dto.response.ReportEventsResponse;
 import com.digitalsignage.playerserver.entity.DeviceEvent;
+import com.digitalsignage.playerserver.entity.Screen;
 import com.digitalsignage.playerserver.repository.DeviceEventRepository;
+import com.digitalsignage.playerserver.repository.ScreenRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,10 +20,13 @@ import org.springframework.data.redis.core.RedisOperations;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,16 +34,26 @@ import static org.mockito.Mockito.*;
 class EventServiceTest {
 
     @Mock private DeviceEventRepository deviceEventRepository;
+    @Mock private ScreenRepository screenRepository;
     @Mock private RedisOperations<String, Object> redisOperations;
     @Mock private HashOperations<String, Object, Object> hashOperations;
 
     private EventService eventService;
 
+    private Screen testScreen;
+
     @BeforeEach
     void setUp() {
         when(redisOperations.opsForHash()).thenReturn(hashOperations);
         when(hashOperations.entries(anyString())).thenReturn(new HashMap<>());
-        eventService = new EventService(deviceEventRepository, redisOperations);
+
+        testScreen = new Screen();
+        testScreen.setId(1L);
+        testScreen.setDeviceCode("d1");
+
+        when(screenRepository.findByDeviceCode("d1")).thenReturn(Optional.of(testScreen));
+
+        eventService = new EventService(deviceEventRepository, screenRepository, redisOperations);
     }
 
     @Test

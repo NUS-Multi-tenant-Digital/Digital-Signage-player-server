@@ -2,13 +2,15 @@ package com.digitalsignage.playerserver.service;
 
 import com.digitalsignage.playerserver.dto.request.PullManifestRequest;
 import com.digitalsignage.playerserver.dto.response.PullManifestResponse;
-import com.digitalsignage.playerserver.entity.Asset;
+import com.digitalsignage.playerserver.entity.Media;
 import com.digitalsignage.playerserver.entity.Manifest;
-import com.digitalsignage.playerserver.entity.ManifestAsset;
+import com.digitalsignage.playerserver.entity.ManifestMedia;
 import com.digitalsignage.playerserver.entity.PlayerConfig;
-import com.digitalsignage.playerserver.repository.ManifestAssetRepository;
+import com.digitalsignage.playerserver.entity.Screen;
+import com.digitalsignage.playerserver.repository.ManifestMediaRepository;
 import com.digitalsignage.playerserver.repository.ManifestRepository;
 import com.digitalsignage.playerserver.repository.PlayerConfigRepository;
+import com.digitalsignage.playerserver.repository.ScreenRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.stereotype.Service;
@@ -20,21 +22,24 @@ import java.util.concurrent.TimeUnit;
 public class ManifestService {
 
     private final ManifestRepository manifestRepository;
-    private final ManifestAssetRepository manifestAssetRepository;
+    private final ManifestMediaRepository manifestMediaRepository;
     private final PlayerConfigRepository playerConfigRepository;
+    private final ScreenRepository screenRepository;
     private final RedisOperations<String, Object> redisOperations;
     private final ObjectMapper objectMapper;
 
     private static final String MANIFEST_CACHE_PREFIX = "manifest_cache:";
 
     public ManifestService(ManifestRepository manifestRepository,
-                           ManifestAssetRepository manifestAssetRepository,
+                           ManifestMediaRepository manifestMediaRepository,
                            PlayerConfigRepository playerConfigRepository,
+                           ScreenRepository screenRepository,
                            RedisOperations<String, Object> redisOperations,
                            ObjectMapper objectMapper) {
         this.manifestRepository = manifestRepository;
-        this.manifestAssetRepository = manifestAssetRepository;
+        this.manifestMediaRepository = manifestMediaRepository;
         this.playerConfigRepository = playerConfigRepository;
+        this.screenRepository = screenRepository;
         this.redisOperations = redisOperations;
         this.objectMapper = objectMapper;
     }
@@ -42,11 +47,24 @@ public class ManifestService {
     public PullManifestResponse pullManifest(PullManifestRequest req) {
         long now = System.currentTimeMillis();
 
-        PlayerConfig config = playerConfigRepository.findByDeviceId(req.getDeviceId()).orElse(null);
+        // Resolve deviceCode (external device_id) to screen
+        Screen screen = screenRepository.findByDeviceCode(req.getDeviceId()).orElse(null);
+        if (screen == null) {
+            PullManifestResponse resp = new PullManifestResponse();
+            resp.setUpdateType("MANIFEST_NO_UPDATE");
+            resp.setManifest(null);
+            resp.setNextPollIntervalSec(60);
+            resp.setServerTime(now);
+            resp.setMessage("Screen not found for device_id: " + req.getDeviceId());
+            return resp;
+        }
+
+        Long screenId = screen.getId();
+        PlayerConfig config = playerConfigRepository.findByScreenId(screenId).orElse(null);
         int nextPollIntervalSec = config != null ? config.getManifestSyncIntervalSec() : 60;
 
         Optional<Manifest> manifestOpt = manifestRepository
-                .findFirstByDeviceIdOrderByIsActiveDescVersionDesc(req.getDeviceId());
+                .findFirstByScreenIdOrderByIsActiveDescVersionDesc(screenId);
 
         if (manifestOpt.isEmpty()) {
             PullManifestResponse resp = new PullManifestResponse();
@@ -71,10 +89,11 @@ public class ManifestService {
             return resp;
         }
 
-        // Save sync state to Redis
-        String syncKey = "sync_state:" + req.getDeviceId();
+        // Save sync state to Redis using deviceCode
+        String syncKey = "sync_state:" + screen.getDeviceCode();
         Map<String, Object> syncState = new HashMap<>();
-        syncState.put("deviceId", req.getDeviceId());
+        syncState.put("deviceCode", screen.getDeviceCode());
+        syncState.put("screenId", screenId);
         syncState.put("manifestVersion", manifest.getVersion());
         syncState.put("lastSyncAt", now);
         syncState.put("lastOnlineAt", now);
@@ -86,7 +105,7 @@ public class ManifestService {
 
         if (manifestData == null) {
             // Cache miss: build from MySQL and cache it
-            manifestData = buildManifestData(manifest);
+            manifestData = buildManifestData(manifest, screen);
 
             // Cache with TTL from manifest's ttl_sec (default 1 hour)
             int ttlSec = manifest.getTtlSec() > 0 ? manifest.getTtlSec() : 3600;
@@ -117,14 +136,13 @@ public class ManifestService {
         return null;
     }
 
-    private Map<String, Object> buildManifestData(Manifest manifest) {
+    private Map<String, Object> buildManifestData(Manifest manifest, Screen screen) {
         Map<String, Object> manifestData = new LinkedHashMap<>();
         manifestData.put("manifest_id", manifest.getManifestId());
         manifestData.put("version", manifest.getVersion());
-        manifestData.put("tenant_id", manifest.getTenantId());
-        manifestData.put("device_id", manifest.getDeviceId());
-        manifestData.put("location_id", manifest.getLocationId());
-        manifestData.put("group_id", manifest.getGroupId());
+        manifestData.put("organization_id", manifest.getOrganizationId());
+        manifestData.put("device_id", screen.getDeviceCode());
+        manifestData.put("layout_id", manifest.getLayoutId());
         manifestData.put("valid_from", manifest.getValidFrom());
         manifestData.put("valid_to", manifest.getValidTo());
         manifestData.put("ttl_sec", manifest.getTtlSec());
@@ -141,32 +159,30 @@ public class ManifestService {
             manifestData.put("fallback_policy", Map.of());
         }
 
-        List<Asset> assets = manifestAssetRepository.findAssetsByManifestId(manifest.getManifestId());
-        List<ManifestAsset> manifestAssets = manifestAssetRepository.findByManifestId(manifest.getManifestId());
-        Map<String, ManifestAsset> maMap = new HashMap<>();
-        for (ManifestAsset ma : manifestAssets) {
-            maMap.put(ma.getAssetId(), ma);
+        List<Media> mediaList = manifestMediaRepository.findMediaByManifestId(manifest.getManifestId());
+        List<ManifestMedia> manifestMediaItems = manifestMediaRepository.findByManifestId(manifest.getManifestId());
+        Map<Long, ManifestMedia> mmMap = new HashMap<>();
+        for (ManifestMedia mm : manifestMediaItems) {
+            mmMap.put(mm.getMediaId(), mm);
         }
 
-        List<Map<String, Object>> assetList = new ArrayList<>();
-        for (Asset asset : assets) {
-            Map<String, Object> a = new LinkedHashMap<>();
-            a.put("asset_id", asset.getAssetId());
-            a.put("asset_type", asset.getAssetType());
-            a.put("file_name", asset.getFileName());
-            a.put("asset_ref", asset.getAssetRef());
-            a.put("oss_path", asset.getOssPath());
-            a.put("cdn_path", asset.getCdnPath());
-            a.put("mime_type", asset.getMimeType());
-            a.put("size_bytes", asset.getSizeBytes());
-            a.put("sha256", asset.getSha256());
-            a.put("duration_ms", asset.getDurationMs());
-            ManifestAsset ma = maMap.get(asset.getAssetId());
-            a.put("required", ma != null && ma.isRequired());
-            a.put("priority", ma != null ? ma.getPriority() : 0);
-            assetList.add(a);
+        List<Map<String, Object>> mediaItems = new ArrayList<>();
+        for (Media media : mediaList) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("media_id", media.getId());
+            m.put("media_type", media.getMediaType());
+            m.put("name", media.getName());
+            m.put("object_key", media.getObjectKey());
+            m.put("file_url", media.getFileUrl());
+            m.put("file_size_bytes", media.getFileSizeBytes());
+            m.put("checksum_sha256", media.getChecksumSha256());
+            m.put("duration_seconds", media.getDurationSeconds());
+            ManifestMedia mm = mmMap.get(media.getId());
+            m.put("required", mm != null && mm.isRequired());
+            m.put("priority", mm != null ? mm.getPriority() : 0);
+            mediaItems.add(m);
         }
-        manifestData.put("assets", assetList);
+        manifestData.put("media", mediaItems);
         manifestData.put("checksum", manifest.getChecksum());
         manifestData.put("generated_at", manifest.getGeneratedAt());
 

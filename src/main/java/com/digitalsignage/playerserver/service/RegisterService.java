@@ -2,16 +2,16 @@ package com.digitalsignage.playerserver.service;
 
 import com.digitalsignage.playerserver.dto.request.RegisterPlayerRequest;
 import com.digitalsignage.playerserver.dto.response.RegisterPlayerResponse;
-import com.digitalsignage.playerserver.entity.Device;
+import com.digitalsignage.playerserver.entity.Screen;
 import com.digitalsignage.playerserver.entity.PlayerConfig;
-import com.digitalsignage.playerserver.repository.DeviceRepository;
+import com.digitalsignage.playerserver.repository.ScreenRepository;
 import com.digitalsignage.playerserver.repository.PlayerConfigRepository;
-import com.digitalsignage.playerserver.security.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,68 +21,63 @@ import java.util.UUID;
 @Service
 public class RegisterService {
 
-    private final DeviceRepository deviceRepository;
+    private final ScreenRepository screenRepository;
     private final PlayerConfigRepository playerConfigRepository;
     private final RedisOperations<String, Object> redisOperations;
     private final ObjectMapper objectMapper;
-    private final JwtService jwtService;
 
-    public RegisterService(DeviceRepository deviceRepository,
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    public RegisterService(ScreenRepository screenRepository,
                            PlayerConfigRepository playerConfigRepository,
                            RedisOperations<String, Object> redisOperations,
-                           ObjectMapper objectMapper,
-                           JwtService jwtService) {
-        this.deviceRepository = deviceRepository;
+                           ObjectMapper objectMapper) {
+        this.screenRepository = screenRepository;
         this.playerConfigRepository = playerConfigRepository;
         this.redisOperations = redisOperations;
         this.objectMapper = objectMapper;
-        this.jwtService = jwtService;
     }
 
     @Transactional
     public RegisterPlayerResponse register(RegisterPlayerRequest req) {
         long now = System.currentTimeMillis();
 
-        String deviceId = UUID.randomUUID().toString();
-        String tenantId = req.getTenantId() != null ? req.getTenantId() : "default_tenant";
+        String deviceCode = UUID.randomUUID().toString();
+        Long organizationId = parseOrganizationId(req.getTenantId());
 
-        // Generate JWT token
-        String accessToken = jwtService.generateToken(deviceId, tenantId);
-        long tokenExpireAt = now + jwtService.getTokenValidityMs();
+        // Generate random 64-char hex token (32 random bytes → hex string)
+        String deviceToken = generateRandomHexToken();
 
-        Device device = new Device();
-        device.setDeviceId(deviceId);
-        device.setTenantId(tenantId);
-        device.setLocationId(req.getLocationId() != null ? req.getLocationId() : "default_location");
-        device.setDeviceSn(req.getDeviceSn());
-        device.setActivationCode(req.getActivationCode());
-        device.setDeviceName(req.getDeviceName());
-        device.setPlatform(req.getPlatform());
-        device.setAppVersion(req.getAppVersion());
-        device.setOsVersion(req.getOsVersion());
-        device.setFirmwareVersion(req.getFirmwareVersion());
-        device.setScreenResolution(req.getScreenResolution());
-        device.setTimezone(req.getTimezone());
-        device.setMacAddress(req.getMacAddress());
-        device.setIpAddress(req.getIpAddress());
-        try {
-            device.setCapabilitiesJson(objectMapper.writeValueAsString(
-                    req.getCapabilities() != null ? req.getCapabilities() : Map.of()));
-        } catch (Exception e) {
-            device.setCapabilitiesJson("{}");
+        // Parse resolution from "WIDTHxHEIGHT" format
+        Integer resolutionWidth = null;
+        Integer resolutionHeight = null;
+        if (req.getScreenResolution() != null && req.getScreenResolution().contains("x")) {
+            String[] parts = req.getScreenResolution().split("x");
+            try {
+                resolutionWidth = Integer.parseInt(parts[0]);
+                resolutionHeight = Integer.parseInt(parts[1]);
+            } catch (NumberFormatException ignored) {}
         }
-        device.setAccessToken(accessToken);
-        device.setTokenExpireAt(tokenExpireAt);
-        device.setStatus("active");
-        device.setCreatedAt(LocalDateTime.now());
-        device.setUpdatedAt(LocalDateTime.now());
 
-        deviceRepository.save(device);
+        Screen screen = new Screen();
+        screen.setDeviceCode(deviceCode);
+        screen.setOrganizationId(organizationId);
+        screen.setName(req.getDeviceName());
+        screen.setActivationCode(req.getActivationCode());
+        screen.setActivationStatus("activated");
+        screen.setDeviceToken(deviceToken);
+        screen.setStatus("active");
+        screen.setAppVersion(req.getAppVersion());
+        screen.setResolutionWidth(resolutionWidth);
+        screen.setResolutionHeight(resolutionHeight);
+        screen.setLastHeartbeatAt(LocalDateTime.now());
+        screen.setCreatedAt(LocalDateTime.now());
+        screen.setUpdatedAt(LocalDateTime.now());
+
+        screenRepository.save(screen);
 
         PlayerConfig config = new PlayerConfig();
-        config.setDeviceId(device.getDeviceId());
-        config.setTenantId(device.getTenantId());
-        config.setLocationId(device.getLocationId());
+        config.setScreenId(screen.getId());
         config.setHeartbeatIntervalSec(30);
         config.setManifestSyncIntervalSec(60);
         config.setEventFlushIntervalSec(30);
@@ -99,25 +94,23 @@ public class RegisterService {
         playerConfigRepository.save(config);
 
         // Save initial sync state to Redis
-        String syncKey = "sync_state:" + device.getDeviceId();
+        String syncKey = "sync_state:" + screen.getDeviceCode();
         Map<String, Object> syncState = new HashMap<>();
-        syncState.put("deviceId", device.getDeviceId());
+        syncState.put("deviceCode", screen.getDeviceCode());
+        syncState.put("screenId", screen.getId());
         syncState.put("manifestVersion", 0);
         syncState.put("lastOnlineAt", now);
         redisOperations.opsForHash().putAll(syncKey, syncState);
 
-        // Build response
+        // Build response - keep external API contract (device_id maps to deviceCode)
         RegisterPlayerResponse resp = new RegisterPlayerResponse();
-        resp.setDeviceId(device.getDeviceId());
-        resp.setTenantId(device.getTenantId());
-        resp.setLocationId(device.getLocationId());
-        resp.setAccessToken(device.getAccessToken());
-        resp.setTokenExpireAt(device.getTokenExpireAt());
+        resp.setDeviceId(screen.getDeviceCode());
+        resp.setTenantId(String.valueOf(screen.getOrganizationId()));
+        resp.setAccessToken(screen.getDeviceToken());
+        resp.setTokenExpireAt(0);
 
         RegisterPlayerResponse.PlayerConfigDto configDto = new RegisterPlayerResponse.PlayerConfigDto();
-        configDto.setDeviceId(config.getDeviceId());
-        configDto.setTenantId(config.getTenantId());
-        configDto.setLocationId(config.getLocationId());
+        configDto.setDeviceId(screen.getDeviceCode());
         configDto.setHeartbeatIntervalSec(config.getHeartbeatIntervalSec());
         configDto.setManifestSyncIntervalSec(config.getManifestSyncIntervalSec());
         configDto.setEventFlushIntervalSec(config.getEventFlushIntervalSec());
@@ -131,5 +124,26 @@ public class RegisterService {
         resp.setConfig(configDto);
 
         return resp;
+    }
+
+    private static String generateRandomHexToken() {
+        byte[] bytes = new byte[32];
+        SECURE_RANDOM.nextBytes(bytes);
+        StringBuilder sb = new StringBuilder(64);
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
+    private Long parseOrganizationId(String tenantId) {
+        if (tenantId == null || tenantId.isEmpty()) {
+            return 1L;
+        }
+        try {
+            return Long.parseLong(tenantId);
+        } catch (NumberFormatException e) {
+            return 1L;
+        }
     }
 }

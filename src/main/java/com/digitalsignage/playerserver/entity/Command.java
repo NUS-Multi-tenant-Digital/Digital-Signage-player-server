@@ -14,8 +14,8 @@ public class Command {
     @Column(name = "command_id", nullable = false, unique = true, length = 64)
     private String commandId;
 
-    @Column(name = "device_id", nullable = false, length = 64)
-    private String deviceId;
+    @Column(name = "screen_id", nullable = false)
+    private Long screenId;
 
     @Column(name = "type", nullable = false, length = 64)
     private String type;
@@ -54,12 +54,12 @@ public class Command {
         this.commandId = commandId;
     }
 
-    public String getDeviceId() {
-        return deviceId;
+    public Long getScreenId() {
+        return screenId;
     }
 
-    public void setDeviceId(String deviceId) {
-        this.deviceId = deviceId;
+    public void setScreenId(Long screenId) {
+        this.screenId = screenId;
     }
 
     public String getType() {

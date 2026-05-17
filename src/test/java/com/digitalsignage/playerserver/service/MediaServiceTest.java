@@ -2,9 +2,10 @@ package com.digitalsignage.playerserver.service;
 
 import com.digitalsignage.playerserver.dto.request.BatchGetAssetUrlRequest;
 import com.digitalsignage.playerserver.dto.response.BatchAssetUrlResponse;
-import com.digitalsignage.playerserver.entity.Asset;
-import com.digitalsignage.playerserver.repository.AssetRepository;
+import com.digitalsignage.playerserver.entity.Media;
+import com.digitalsignage.playerserver.repository.MediaRepository;
 import com.digitalsignage.playerserver.repository.ManifestRepository;
+import com.digitalsignage.playerserver.repository.ScreenRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,14 +24,16 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class AssetServiceTest {
+class MediaServiceTest {
 
     @Mock
-    private AssetRepository assetRepository;
+    private MediaRepository mediaRepository;
     @Mock
     private ManifestRepository manifestRepository;
+    @Mock
+    private ScreenRepository screenRepository;
 
-    private AssetService assetService;
+    private MediaService mediaService;
     private ObjectMapper objectMapper = new ObjectMapper();
     private OssService ossService;
 
@@ -38,26 +41,26 @@ class AssetServiceTest {
     void setUp() {
         // OssService with empty access-key-id → disabled mode, no OSS signing
         ossService = new OssService(null, "test-bucket", "", "");
-        assetService = new AssetService(assetRepository, manifestRepository, objectMapper, ossService);
+        mediaService = new MediaService(mediaRepository, manifestRepository, screenRepository, objectMapper, ossService);
     }
 
     @Test
-    @DisplayName("批量获取资源 URL - 优先返回 CDN 路径")
-    void batchGetAssetUrls_prefersCdn() {
-        Asset asset = new Asset();
-        asset.setAssetId("a1");
-        asset.setCdnPath("https://cdn.example.com/video.mp4");
-        asset.setOssPath("oss://bucket/video.mp4");
-        asset.setSha256("abc123");
-        asset.setSizeBytes(1024000);
+    @DisplayName("批量获取资源 URL - 优先返回 file_url")
+    void batchGetAssetUrls_prefersFileUrl() {
+        Media media = new Media();
+        media.setId(1L);
+        media.setFileUrl("https://cdn.example.com/video.mp4");
+        media.setObjectKey("mvp/video.mp4");
+        media.setChecksumSha256("abc123");
+        media.setFileSizeBytes(1024000L);
 
-        when(assetRepository.findByAssetIdIn(List.of("a1"))).thenReturn(List.of(asset));
+        when(mediaRepository.findByIdIn(List.of(1L))).thenReturn(List.of(media));
 
         BatchGetAssetUrlRequest req = new BatchGetAssetUrlRequest();
         req.setDeviceId("d1");
-        req.setAssetIds(List.of("a1"));
+        req.setAssetIds(List.of("1"));
 
-        BatchAssetUrlResponse resp = assetService.batchGetAssetUrls(req);
+        BatchAssetUrlResponse resp = mediaService.batchGetAssetUrls(req);
 
         assertThat(resp.getAssets()).hasSize(1);
         assertThat(resp.getAssets().get(0).getDownloadUrl()).isEqualTo("https://cdn.example.com/video.mp4");
@@ -65,22 +68,22 @@ class AssetServiceTest {
     }
 
     @Test
-    @DisplayName("CDN 为空时 fallback 到 OSS 路径")
-    void batchGetAssetUrls_fallbackToOss() {
-        Asset asset = new Asset();
-        asset.setAssetId("a2");
-        asset.setCdnPath(null);
-        asset.setOssPath("oss://bucket/image.png");
-        asset.setSha256("def456");
-        asset.setSizeBytes(2048);
+    @DisplayName("file_url 为空时 fallback 到 object_key")
+    void batchGetAssetUrls_fallbackToObjectKey() {
+        Media media = new Media();
+        media.setId(2L);
+        media.setFileUrl(null);
+        media.setObjectKey("oss://bucket/image.png");
+        media.setChecksumSha256("def456");
+        media.setFileSizeBytes(2048L);
 
-        when(assetRepository.findByAssetIdIn(List.of("a2"))).thenReturn(List.of(asset));
+        when(mediaRepository.findByIdIn(List.of(2L))).thenReturn(List.of(media));
 
         BatchGetAssetUrlRequest req = new BatchGetAssetUrlRequest();
         req.setDeviceId("d1");
-        req.setAssetIds(List.of("a2"));
+        req.setAssetIds(List.of("2"));
 
-        BatchAssetUrlResponse resp = assetService.batchGetAssetUrls(req);
+        BatchAssetUrlResponse resp = mediaService.batchGetAssetUrls(req);
 
         assertThat(resp.getAssets().get(0).getDownloadUrl()).isEqualTo("oss://bucket/image.png");
     }
@@ -88,13 +91,13 @@ class AssetServiceTest {
     @Test
     @DisplayName("空列表返回空结果")
     void batchGetAssetUrls_emptyList() {
-        when(assetRepository.findByAssetIdIn(Collections.emptyList())).thenReturn(Collections.emptyList());
+        when(mediaRepository.findByIdIn(Collections.emptyList())).thenReturn(Collections.emptyList());
 
         BatchGetAssetUrlRequest req = new BatchGetAssetUrlRequest();
         req.setDeviceId("d1");
         req.setAssetIds(Collections.emptyList());
 
-        BatchAssetUrlResponse resp = assetService.batchGetAssetUrls(req);
+        BatchAssetUrlResponse resp = mediaService.batchGetAssetUrls(req);
 
         assertThat(resp.getAssets()).isEmpty();
     }

@@ -1,6 +1,6 @@
 package com.digitalsignage.playerserver.config;
 
-import com.digitalsignage.playerserver.security.JwtAuthFilter;
+import com.digitalsignage.playerserver.security.DeviceTokenAuthFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,9 +9,9 @@ import org.springframework.context.annotation.Configuration;
 public class SecurityConfig {
 
     @Bean
-    public FilterRegistrationBean<JwtAuthFilter> jwtFilter(JwtAuthFilter jwtAuthFilter) {
-        FilterRegistrationBean<JwtAuthFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(jwtAuthFilter);
+    public FilterRegistrationBean<DeviceTokenAuthFilter> deviceTokenFilter(DeviceTokenAuthFilter deviceTokenAuthFilter) {
+        FilterRegistrationBean<DeviceTokenAuthFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(deviceTokenAuthFilter);
         registration.addUrlPatterns("/api/*");
         registration.setOrder(1);
         return registration;

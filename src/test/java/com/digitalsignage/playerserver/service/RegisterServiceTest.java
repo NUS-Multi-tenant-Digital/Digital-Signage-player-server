@@ -2,17 +2,15 @@ package com.digitalsignage.playerserver.service;
 
 import com.digitalsignage.playerserver.dto.request.RegisterPlayerRequest;
 import com.digitalsignage.playerserver.dto.response.RegisterPlayerResponse;
-import com.digitalsignage.playerserver.entity.Device;
+import com.digitalsignage.playerserver.entity.Screen;
 import com.digitalsignage.playerserver.entity.PlayerConfig;
-import com.digitalsignage.playerserver.repository.DeviceRepository;
+import com.digitalsignage.playerserver.repository.ScreenRepository;
 import com.digitalsignage.playerserver.repository.PlayerConfigRepository;
-import com.digitalsignage.playerserver.security.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -21,7 +19,7 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisOperations;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,7 +27,7 @@ import static org.mockito.Mockito.*;
 class RegisterServiceTest {
 
     @Mock
-    private DeviceRepository deviceRepository;
+    private ScreenRepository screenRepository;
     @Mock
     private PlayerConfigRepository playerConfigRepository;
     @Mock
@@ -39,18 +37,21 @@ class RegisterServiceTest {
 
     private RegisterService registerService;
     private ObjectMapper objectMapper = new ObjectMapper();
-    private JwtService jwtService = new JwtService("0123456789abcdef0123456789abcdef", 7);
 
     @BeforeEach
     void setUp() {
         when(redisOperations.opsForHash()).thenReturn(hashOperations);
-        registerService = new RegisterService(deviceRepository, playerConfigRepository, redisOperations, objectMapper, jwtService);
+        registerService = new RegisterService(screenRepository, playerConfigRepository, redisOperations, objectMapper);
     }
 
     @Test
     @DisplayName("注册成功 - 返回 device_id 和 access_token")
     void register_success() {
-        when(deviceRepository.save(any(Device.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(screenRepository.save(any(Screen.class))).thenAnswer(inv -> {
+            Screen s = inv.getArgument(0);
+            s.setId(1L);
+            return s;
+        });
         when(playerConfigRepository.save(any(PlayerConfig.class))).thenAnswer(inv -> inv.getArgument(0));
 
         RegisterPlayerRequest req = new RegisterPlayerRequest();
@@ -68,20 +69,24 @@ class RegisterServiceTest {
         RegisterPlayerResponse resp = registerService.register(req);
 
         assertThat(resp.getDeviceId()).isNotNull().isNotEmpty();
-        assertThat(resp.getAccessToken()).isNotNull().contains("."); // JWT format: header.payload.signature
-        assertThat(resp.getTokenExpireAt()).isGreaterThan(System.currentTimeMillis());
-        assertThat(resp.getTenantId()).isEqualTo("default_tenant");
+        assertThat(resp.getAccessToken()).isNotNull().hasSize(64); // 32 bytes -> 64 hex chars
+        assertThat(resp.getAccessToken()).matches("[0-9a-f]{64}");
+        assertThat(resp.getTenantId()).isEqualTo("1"); // default organization_id
         assertThat(resp.getConfig()).isNotNull();
         assertThat(resp.getConfig().getHeartbeatIntervalSec()).isEqualTo(30);
 
-        verify(deviceRepository).save(any(Device.class));
+        verify(screenRepository).save(any(Screen.class));
         verify(playerConfigRepository).save(any(PlayerConfig.class));
     }
 
     @Test
-    @DisplayName("注册时使用自定义 tenant_id 和 location_id")
-    void register_with_custom_tenant() {
-        when(deviceRepository.save(any(Device.class))).thenAnswer(inv -> inv.getArgument(0));
+    @DisplayName("注册时使用自定义 organization_id")
+    void register_with_custom_organization() {
+        when(screenRepository.save(any(Screen.class))).thenAnswer(inv -> {
+            Screen s = inv.getArgument(0);
+            s.setId(2L);
+            return s;
+        });
         when(playerConfigRepository.save(any(PlayerConfig.class))).thenAnswer(inv -> inv.getArgument(0));
 
         RegisterPlayerRequest req = new RegisterPlayerRequest();
@@ -95,19 +100,21 @@ class RegisterServiceTest {
         req.setTimezone("Asia/Shanghai");
         req.setMacAddress("AA:BB:CC:DD:EE:FF");
         req.setIpAddress("10.0.0.1");
-        req.setTenantId("tenant_custom");
-        req.setLocationId("location_custom");
+        req.setTenantId("42");
 
         RegisterPlayerResponse resp = registerService.register(req);
 
-        assertThat(resp.getTenantId()).isEqualTo("tenant_custom");
-        assertThat(resp.getLocationId()).isEqualTo("location_custom");
+        assertThat(resp.getTenantId()).isEqualTo("42");
     }
 
     @Test
     @DisplayName("注册后 Redis 中保存了初始同步状态")
     void register_saves_sync_state_to_redis() {
-        when(deviceRepository.save(any(Device.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(screenRepository.save(any(Screen.class))).thenAnswer(inv -> {
+            Screen s = inv.getArgument(0);
+            s.setId(3L);
+            return s;
+        });
         when(playerConfigRepository.save(any(PlayerConfig.class))).thenAnswer(inv -> inv.getArgument(0));
 
         RegisterPlayerRequest req = new RegisterPlayerRequest();

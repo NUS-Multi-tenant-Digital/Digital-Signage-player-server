@@ -151,7 +151,7 @@ class StressTest {
 
     @Test
     @Order(2)
-    @DisplayName("并发心跳压力测试 - 50 并发 x 20 请求（带 JWT）")
+    @DisplayName("并发心跳压力测试 - 50 并发 x 20 请求（带 Token）")
     void stressTest_heartbeat() throws Exception {
         // Ensure we have a token
         if (sharedToken == null) {

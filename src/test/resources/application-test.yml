@@ -18,6 +18,4 @@ spring:
 server:
   port: 0
 
-app:
-  jwt-secret: test-secret-key-for-unit-testing-32bytes
-  jwt-expiration-days: 7
+app: {}

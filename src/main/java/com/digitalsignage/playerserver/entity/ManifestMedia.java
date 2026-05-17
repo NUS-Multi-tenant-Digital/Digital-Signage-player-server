@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "manifest_assets")
-public class ManifestAsset {
+@Table(name = "manifest_media")
+public class ManifestMedia {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,8 +14,8 @@ public class ManifestAsset {
     @Column(name = "manifest_id", nullable = false, length = 64)
     private String manifestId;
 
-    @Column(name = "asset_id", nullable = false, length = 64)
-    private String assetId;
+    @Column(name = "media_id", nullable = false)
+    private Long mediaId;
 
     @Column(name = "required", nullable = false)
     private boolean required;
@@ -42,12 +42,12 @@ public class ManifestAsset {
         this.manifestId = manifestId;
     }
 
-    public String getAssetId() {
-        return assetId;
+    public Long getMediaId() {
+        return mediaId;
     }
 
-    public void setAssetId(String assetId) {
-        this.assetId = assetId;
+    public void setMediaId(Long mediaId) {
+        this.mediaId = mediaId;
     }
 
     public boolean isRequired() {

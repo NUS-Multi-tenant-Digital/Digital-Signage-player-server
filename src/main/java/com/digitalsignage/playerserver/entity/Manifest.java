@@ -17,17 +17,14 @@ public class Manifest {
     @Column(name = "version", nullable = false)
     private long version;
 
-    @Column(name = "tenant_id", nullable = false, length = 64)
-    private String tenantId;
+    @Column(name = "screen_id", nullable = false)
+    private Long screenId;
 
-    @Column(name = "device_id", nullable = false, length = 64)
-    private String deviceId;
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
 
-    @Column(name = "location_id", nullable = false, length = 64)
-    private String locationId;
-
-    @Column(name = "group_id", length = 64)
-    private String groupId;
+    @Column(name = "layout_id")
+    private Long layoutId;
 
     @Column(name = "valid_from", nullable = false)
     private long validFrom;
@@ -37,21 +34,6 @@ public class Manifest {
 
     @Column(name = "ttl_sec", nullable = false)
     private int ttlSec;
-
-    @Column(name = "template_id", nullable = false, length = 64)
-    private String templateId;
-
-    @Column(name = "template_version", nullable = false, length = 32)
-    private String templateVersion;
-
-    @Column(name = "design_width", nullable = false)
-    private int designWidth;
-
-    @Column(name = "design_height", nullable = false)
-    private int designHeight;
-
-    @Column(name = "play_mode", nullable = false, length = 32)
-    private String playMode;
 
     @Column(name = "template_config_json", nullable = false, columnDefinition = "JSON")
     private String templateConfigJson;
@@ -104,36 +86,28 @@ public class Manifest {
         this.version = version;
     }
 
-    public String getTenantId() {
-        return tenantId;
+    public Long getScreenId() {
+        return screenId;
     }
 
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
+    public void setScreenId(Long screenId) {
+        this.screenId = screenId;
     }
 
-    public String getDeviceId() {
-        return deviceId;
+    public Long getOrganizationId() {
+        return organizationId;
     }
 
-    public void setDeviceId(String deviceId) {
-        this.deviceId = deviceId;
+    public void setOrganizationId(Long organizationId) {
+        this.organizationId = organizationId;
     }
 
-    public String getLocationId() {
-        return locationId;
+    public Long getLayoutId() {
+        return layoutId;
     }
 
-    public void setLocationId(String locationId) {
-        this.locationId = locationId;
-    }
-
-    public String getGroupId() {
-        return groupId;
-    }
-
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
+    public void setLayoutId(Long layoutId) {
+        this.layoutId = layoutId;
     }
 
     public long getValidFrom() {
@@ -158,46 +132,6 @@ public class Manifest {
 
     public void setTtlSec(int ttlSec) {
         this.ttlSec = ttlSec;
-    }
-
-    public String getTemplateId() {
-        return templateId;
-    }
-
-    public void setTemplateId(String templateId) {
-        this.templateId = templateId;
-    }
-
-    public String getTemplateVersion() {
-        return templateVersion;
-    }
-
-    public void setTemplateVersion(String templateVersion) {
-        this.templateVersion = templateVersion;
-    }
-
-    public int getDesignWidth() {
-        return designWidth;
-    }
-
-    public void setDesignWidth(int designWidth) {
-        this.designWidth = designWidth;
-    }
-
-    public int getDesignHeight() {
-        return designHeight;
-    }
-
-    public void setDesignHeight(int designHeight) {
-        this.designHeight = designHeight;
-    }
-
-    public String getPlayMode() {
-        return playMode;
-    }
-
-    public void setPlayMode(String playMode) {
-        this.playMode = playMode;
     }
 
     public String getTemplateConfigJson() {

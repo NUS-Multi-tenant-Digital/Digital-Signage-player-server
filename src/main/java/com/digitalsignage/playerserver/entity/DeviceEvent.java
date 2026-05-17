@@ -14,8 +14,8 @@ public class DeviceEvent {
     @Column(name = "event_id", nullable = false, unique = true, length = 64)
     private String eventId;
 
-    @Column(name = "device_id", nullable = false, length = 64)
-    private String deviceId;
+    @Column(name = "screen_id", nullable = false)
+    private Long screenId;
 
     @Column(name = "event_type", nullable = false, length = 64)
     private String eventType;
@@ -26,8 +26,8 @@ public class DeviceEvent {
     @Column(name = "manifest_version")
     private Long manifestVersion;
 
-    @Column(name = "asset_id", length = 64)
-    private String assetId;
+    @Column(name = "media_id")
+    private Long mediaId;
 
     @Column(name = "playlist_item_id", length = 64)
     private String playlistItemId;
@@ -63,12 +63,12 @@ public class DeviceEvent {
         this.eventId = eventId;
     }
 
-    public String getDeviceId() {
-        return deviceId;
+    public Long getScreenId() {
+        return screenId;
     }
 
-    public void setDeviceId(String deviceId) {
-        this.deviceId = deviceId;
+    public void setScreenId(Long screenId) {
+        this.screenId = screenId;
     }
 
     public String getEventType() {
@@ -95,12 +95,12 @@ public class DeviceEvent {
         this.manifestVersion = manifestVersion;
     }
 
-    public String getAssetId() {
-        return assetId;
+    public Long getMediaId() {
+        return mediaId;
     }
 
-    public void setAssetId(String assetId) {
-        this.assetId = assetId;
+    public void setMediaId(Long mediaId) {
+        this.mediaId = mediaId;
     }
 
     public String getPlaylistItemId() {

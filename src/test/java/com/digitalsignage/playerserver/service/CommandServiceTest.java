@@ -4,15 +4,18 @@ import com.digitalsignage.playerserver.dto.request.CommandAckRequest;
 import com.digitalsignage.playerserver.dto.response.CommandAckResponse;
 import com.digitalsignage.playerserver.entity.Command;
 import com.digitalsignage.playerserver.entity.CommandAck;
+import com.digitalsignage.playerserver.entity.Screen;
 import com.digitalsignage.playerserver.repository.CommandAckRepository;
 import com.digitalsignage.playerserver.repository.CommandRepository;
+import com.digitalsignage.playerserver.repository.ScreenRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.Optional;
 
@@ -21,13 +24,27 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class CommandServiceTest {
 
     @Mock private CommandRepository commandRepository;
     @Mock private CommandAckRepository commandAckRepository;
+    @Mock private ScreenRepository screenRepository;
 
-    @InjectMocks
     private CommandService commandService;
+
+    private Screen testScreen;
+
+    @BeforeEach
+    void setUp() {
+        testScreen = new Screen();
+        testScreen.setId(1L);
+        testScreen.setDeviceCode("d1");
+
+        when(screenRepository.findByDeviceCode("d1")).thenReturn(Optional.of(testScreen));
+
+        commandService = new CommandService(commandRepository, commandAckRepository, screenRepository);
+    }
 
     @Test
     @DisplayName("ACK 成功 - 命令状态更新为 completed")

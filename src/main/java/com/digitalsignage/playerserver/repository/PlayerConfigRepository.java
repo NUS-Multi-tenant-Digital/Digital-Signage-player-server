@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface PlayerConfigRepository extends JpaRepository<PlayerConfig, Long> {
-    Optional<PlayerConfig> findByDeviceId(String deviceId);
+    Optional<PlayerConfig> findByScreenId(Long screenId);
 }

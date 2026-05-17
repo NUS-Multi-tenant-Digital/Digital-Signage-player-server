@@ -7,5 +7,5 @@ import java.util.Optional;
 
 public interface CommandRepository extends JpaRepository<Command, Long> {
     Optional<Command> findByCommandId(String commandId);
-    List<Command> findByDeviceIdAndStatusAndExpireAtGreaterThan(String deviceId, String status, long now);
+    List<Command> findByScreenIdAndStatusAndExpireAtGreaterThan(Long screenId, String status, long now);
 }

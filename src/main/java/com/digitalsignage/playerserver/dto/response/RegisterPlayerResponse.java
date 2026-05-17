@@ -13,9 +13,6 @@ public class RegisterPlayerResponse {
     @JsonProperty("tenant_id")
     private String tenantId;
 
-    @JsonProperty("location_id")
-    private String locationId;
-
     @JsonProperty("access_token")
     private String accessToken;
 
@@ -38,14 +35,6 @@ public class RegisterPlayerResponse {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
-    }
-
-    public String getLocationId() {
-        return locationId;
-    }
-
-    public void setLocationId(String locationId) {
-        this.locationId = locationId;
     }
 
     public String getAccessToken() {
@@ -77,12 +66,6 @@ public class RegisterPlayerResponse {
 
         @JsonProperty("device_id")
         private String deviceId;
-
-        @JsonProperty("tenant_id")
-        private String tenantId;
-
-        @JsonProperty("location_id")
-        private String locationId;
 
         @JsonProperty("heartbeat_interval_sec")
         private Integer heartbeatIntervalSec;
@@ -120,22 +103,6 @@ public class RegisterPlayerResponse {
 
         public void setDeviceId(String deviceId) {
             this.deviceId = deviceId;
-        }
-
-        public String getTenantId() {
-            return tenantId;
-        }
-
-        public void setTenantId(String tenantId) {
-            this.tenantId = tenantId;
-        }
-
-        public String getLocationId() {
-            return locationId;
-        }
-
-        public void setLocationId(String locationId) {
-            this.locationId = locationId;
         }
 
         public Integer getHeartbeatIntervalSec() {

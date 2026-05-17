@@ -165,9 +165,10 @@ class ApiIntegrationTest {
     @Order(7)
     @DisplayName("POST /api/v1/player/events - 带 token 事件上报")
     void reportEvents() throws Exception {
-        String body = """
+        String deviceId = registeredDeviceId != null ? registeredDeviceId : "test-device-001";
+        String body = String.format("""
                 {
-                    "device_id": "test-device-001",
+                    "device_id": "%s",
                     "events": [
                         {
                             "event_id": "evt_integ_001",
@@ -183,7 +184,7 @@ class ApiIntegrationTest {
                         }
                     ]
                 }
-                """;
+                """, deviceId);
 
         mockMvc.perform(post("/api/v1/player/events")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -199,15 +200,16 @@ class ApiIntegrationTest {
     @Order(8)
     @DisplayName("POST /api/v1/player/commands/ack - 带 token 命令确认")
     void commandAck() throws Exception {
-        String body = """
+        String deviceId = registeredDeviceId != null ? registeredDeviceId : "test-device-001";
+        String body = String.format("""
                 {
-                    "device_id": "test-device-001",
+                    "device_id": "%s",
                     "command_id": "cmd_integ_001",
                     "type": "REFRESH_MANIFEST",
                     "success": true,
                     "executed_at": 1700000020000
                 }
-                """;
+                """, deviceId);
 
         mockMvc.perform(post("/api/v1/player/commands/ack")
                         .contentType(MediaType.APPLICATION_JSON)
