@@ -4,15 +4,12 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "device_events")
+@Table(name = "device_event_log")
 public class DeviceEvent {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "event_id", nullable = false, unique = true, length = 64)
-    private String eventId;
 
     @Column(name = "screen_id", nullable = false)
     private Long screenId;
@@ -20,29 +17,11 @@ public class DeviceEvent {
     @Column(name = "event_type", nullable = false, length = 64)
     private String eventType;
 
-    @Column(name = "manifest_id", length = 64)
-    private String manifestId;
+    @Column(name = "event_level", nullable = false, length = 32)
+    private String eventLevel = "INFO";
 
-    @Column(name = "manifest_version")
-    private Long manifestVersion;
-
-    @Column(name = "media_id")
-    private Long mediaId;
-
-    @Column(name = "playlist_item_id", length = 64)
-    private String playlistItemId;
-
-    @Column(name = "error_code", length = 64)
-    private String errorCode;
-
-    @Column(name = "error_message", length = 512)
-    private String errorMessage;
-
-    @Column(name = "extra_json", columnDefinition = "JSON")
-    private String extraJson;
-
-    @Column(name = "event_timestamp", nullable = false)
-    private long eventTimestamp;
+    @Column(name = "message", length = 2048)
+    private String message;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -53,14 +32,6 @@ public class DeviceEvent {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
     }
 
     public Long getScreenId() {
@@ -79,68 +50,20 @@ public class DeviceEvent {
         this.eventType = eventType;
     }
 
-    public String getManifestId() {
-        return manifestId;
+    public String getEventLevel() {
+        return eventLevel;
     }
 
-    public void setManifestId(String manifestId) {
-        this.manifestId = manifestId;
+    public void setEventLevel(String eventLevel) {
+        this.eventLevel = eventLevel;
     }
 
-    public Long getManifestVersion() {
-        return manifestVersion;
+    public String getMessage() {
+        return message;
     }
 
-    public void setManifestVersion(Long manifestVersion) {
-        this.manifestVersion = manifestVersion;
-    }
-
-    public Long getMediaId() {
-        return mediaId;
-    }
-
-    public void setMediaId(Long mediaId) {
-        this.mediaId = mediaId;
-    }
-
-    public String getPlaylistItemId() {
-        return playlistItemId;
-    }
-
-    public void setPlaylistItemId(String playlistItemId) {
-        this.playlistItemId = playlistItemId;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
-    }
-
-    public void setErrorCode(String errorCode) {
-        this.errorCode = errorCode;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
-    public String getExtraJson() {
-        return extraJson;
-    }
-
-    public void setExtraJson(String extraJson) {
-        this.extraJson = extraJson;
-    }
-
-    public long getEventTimestamp() {
-        return eventTimestamp;
-    }
-
-    public void setEventTimestamp(long eventTimestamp) {
-        this.eventTimestamp = eventTimestamp;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public LocalDateTime getCreatedAt() {
