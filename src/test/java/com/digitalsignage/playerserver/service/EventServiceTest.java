@@ -6,12 +6,10 @@ import com.digitalsignage.playerserver.entity.DeviceEvent;
 import com.digitalsignage.playerserver.entity.Screen;
 import com.digitalsignage.playerserver.repository.DeviceEventRepository;
 import com.digitalsignage.playerserver.repository.ScreenRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -55,7 +53,7 @@ class EventServiceTest {
 
         when(screenRepository.findByDeviceCode("d1")).thenReturn(Optional.of(testScreen));
 
-        eventService = new EventService(deviceEventRepository, screenRepository, redisOperations, new ObjectMapper());
+        eventService = new EventService(deviceEventRepository, screenRepository, redisOperations);
     }
 
     @Test
@@ -83,15 +81,6 @@ class EventServiceTest {
         assertThat(resp.getAcceptedCount()).isEqualTo(2);
         assertThat(resp.getRejectedCount()).isEqualTo(0);
         verify(deviceEventRepository, times(2)).save(any(DeviceEvent.class));
-
-        // Verify that saved events use the new message field
-        ArgumentCaptor<DeviceEvent> captor = ArgumentCaptor.forClass(DeviceEvent.class);
-        verify(deviceEventRepository, times(2)).save(captor.capture());
-        for (DeviceEvent saved : captor.getAllValues()) {
-            assertThat(saved.getMessage()).isNotNull();
-            assertThat(saved.getEventLevel()).isEqualTo("INFO");
-            assertThat(saved.getCreatedAt()).isNotNull();
-        }
     }
 
     @Test

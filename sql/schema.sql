@@ -174,4 +174,6 @@ CREATE TABLE IF NOT EXISTS command_acks (
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- device_event_log: owned by admin-backend V1, reused by player-server
+-- device_event_log: owned by admin-backend V1, extended by player-server V9 (ALTER TABLE adds columns)
+-- Original columns: id, screen_id, event_type, event_level, message, created_at
+-- Player-server columns: event_id, manifest_id, manifest_version, media_id, playlist_item_id, error_code, error_message, extra_json, event_timestamp
