@@ -5,11 +5,9 @@
 -- admin backend (Digital-Signage-admin-backend).
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS player_application_server
-  DEFAULT CHARACTER SET utf8mb4
-  DEFAULT COLLATE utf8mb4_0900_ai_ci;
-
-USE player_application_server;
+-- Database: digital_signage
+-- When running locally: CREATE DATABASE IF NOT EXISTS digital_signage;
+-- CI passes the database name via connection URL.
 
 -- --------------------------------------------------------
 -- Admin-backend owned tables (for reference / local dev)
