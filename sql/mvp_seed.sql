@@ -1,4 +1,4 @@
-USE player_application_server;
+-- Database: digital_signage (passed via connection URL in CI)
 
 SET NAMES utf8mb4;
 
