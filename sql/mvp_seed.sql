@@ -14,7 +14,7 @@ SET NAMES utf8mb4;
 -- Clean up existing seed data
 DELETE FROM command_acks WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
 DELETE FROM commands WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
-DELETE FROM device_events WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
+DELETE FROM device_event_log WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
 DELETE FROM manifest_media WHERE manifest_id = 'manifest_web_lobby_v1';
 DELETE FROM manifests WHERE manifest_id = 'manifest_web_lobby_v1';
 DELETE FROM player_configs WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);

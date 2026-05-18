@@ -13,6 +13,14 @@
 -- Admin-backend owned tables (for reference / local dev)
 -- --------------------------------------------------------
 
+CREATE TABLE IF NOT EXISTS organization (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE IF NOT EXISTS screen (
   id BIGINT NOT NULL AUTO_INCREMENT,
   device_code VARCHAR(64) NOT NULL,
@@ -55,6 +63,18 @@ CREATE TABLE IF NOT EXISTS media (
   PRIMARY KEY (id),
   UNIQUE KEY uk_media_object_key (object_key),
   KEY idx_media_organization_type (organization_id, media_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS device_event_log (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  screen_id BIGINT NOT NULL,
+  event_type VARCHAR(64) NOT NULL,
+  event_level VARCHAR(32) NOT NULL,
+  message VARCHAR(2048) NULL,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  KEY idx_device_event_log_screen_id (screen_id),
+  CONSTRAINT fk_device_event_log_screen FOREIGN KEY (screen_id) REFERENCES screen (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
