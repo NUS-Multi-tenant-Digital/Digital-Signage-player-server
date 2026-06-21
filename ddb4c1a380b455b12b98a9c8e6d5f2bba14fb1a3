@@ -1,0 +1,355 @@
+src/main/java/com/digitalsignage/playerserver/entity/DeviceEvent.java
+  6eb13530647f2303 14-16,29-52,56-66,68-69,71-72,74-75,77-78,80-81,83-84,86-87,89-90,92-93,95-96,98-99 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0abdbcdc8be3e9db789053","tool_type":"agent","tool_id":"Edit","line_ranges":[{"Range":[14,16]},{"Range":[29,52]},{"Range":[56,66]},{"Range":[68,69]},{"Range":[71,72]},{"Range":[74,75]},{"Range":[77,78]},{"Range":[80,81]},{"Range":[83,84]},{"Range":[86,87]},{"Range":[89,90]},{"Range":[92,93]},{"Range":[95,96]},{"Range":[98,99]}]}]}
+src/main/java/com/digitalsignage/playerserver/service/EventService.java
+  6eb13530647f2303 26,48,51-58,60-64 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0abdbcdc8be3e9db789053","tool_type":"agent","tool_id":"Edit","line_ranges":[{"Single":26},{"Single":48},{"Range":[51,58]},{"Range":[60,64]}]}]}
+src/test/java/com/digitalsignage/playerserver/service/EventServiceTest.java
+  6eb13530647f2303 56 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0abdbcdc8be3e9db789053","tool_type":"agent","tool_id":"Edit","line_ranges":[{"Single":56}]}]}
+sql/schema.sql
+  6eb13530647f2303 177-179 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0abdbcdc8be3e9db789053","tool_type":"agent","tool_id":"Edit","line_ranges":[{"Range":[177,179]}]}]}
+src/main/java/com/digitalsignage/playerserver/repository/DeviceEventRepository.java
+  6eb13530647f2303 8 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a0abdbcdc8be3e9db789053","tool_type":"agent","tool_id":"Edit","line_ranges":[{"Single":8}]}]}
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "ddb4c1a380b455b12b98a9c8e6d5f2bba14fb1a3",
+  "prompts": {
+    "6eb13530647f2303": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "69fb1320596ad8602bff1c13",
+        "model": "openrouter-1o__dev"
+      },
+      "human_author": "liuxingyuan168 <liuxingyuan168@bytedance.com>",
+      "messages": [],
+      "total_additions": 120,
+      "total_deletions": 70,
+      "accepted_lines": 120,
+      "overriden_lines": 0
+    }
+  },
+  "attestation_metadata": {
+    "sql/schema.sql": [
+      {
+        "hash": "6eb13530647f2303",
+        "line_ranges": [
+          {
+            "Range": [
+              177,
+              179
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0abdbcdc8be3e9db789053",
+            "tool_type": "agent",
+            "tool_id": "Edit",
+            "line_ranges": [
+              {
+                "Range": [
+                  177,
+                  179
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "src/main/java/com/digitalsignage/playerserver/entity/DeviceEvent.java": [
+      {
+        "hash": "6eb13530647f2303",
+        "line_ranges": [
+          {
+            "Range": [
+              14,
+              16
+            ]
+          },
+          {
+            "Range": [
+              29,
+              52
+            ]
+          },
+          {
+            "Range": [
+              56,
+              66
+            ]
+          },
+          {
+            "Range": [
+              68,
+              69
+            ]
+          },
+          {
+            "Range": [
+              71,
+              72
+            ]
+          },
+          {
+            "Range": [
+              74,
+              75
+            ]
+          },
+          {
+            "Range": [
+              77,
+              78
+            ]
+          },
+          {
+            "Range": [
+              80,
+              81
+            ]
+          },
+          {
+            "Range": [
+              83,
+              84
+            ]
+          },
+          {
+            "Range": [
+              86,
+              87
+            ]
+          },
+          {
+            "Range": [
+              89,
+              90
+            ]
+          },
+          {
+            "Range": [
+              92,
+              93
+            ]
+          },
+          {
+            "Range": [
+              95,
+              96
+            ]
+          },
+          {
+            "Range": [
+              98,
+              99
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0abdbcdc8be3e9db789053",
+            "tool_type": "agent",
+            "tool_id": "Edit",
+            "line_ranges": [
+              {
+                "Range": [
+                  14,
+                  16
+                ]
+              },
+              {
+                "Range": [
+                  29,
+                  52
+                ]
+              },
+              {
+                "Range": [
+                  56,
+                  66
+                ]
+              },
+              {
+                "Range": [
+                  68,
+                  69
+                ]
+              },
+              {
+                "Range": [
+                  71,
+                  72
+                ]
+              },
+              {
+                "Range": [
+                  74,
+                  75
+                ]
+              },
+              {
+                "Range": [
+                  77,
+                  78
+                ]
+              },
+              {
+                "Range": [
+                  80,
+                  81
+                ]
+              },
+              {
+                "Range": [
+                  83,
+                  84
+                ]
+              },
+              {
+                "Range": [
+                  86,
+                  87
+                ]
+              },
+              {
+                "Range": [
+                  89,
+                  90
+                ]
+              },
+              {
+                "Range": [
+                  92,
+                  93
+                ]
+              },
+              {
+                "Range": [
+                  95,
+                  96
+                ]
+              },
+              {
+                "Range": [
+                  98,
+                  99
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "src/main/java/com/digitalsignage/playerserver/repository/DeviceEventRepository.java": [
+      {
+        "hash": "6eb13530647f2303",
+        "line_ranges": [
+          {
+            "Single": 8
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0abdbcdc8be3e9db789053",
+            "tool_type": "agent",
+            "tool_id": "Edit",
+            "line_ranges": [
+              {
+                "Single": 8
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "src/main/java/com/digitalsignage/playerserver/service/EventService.java": [
+      {
+        "hash": "6eb13530647f2303",
+        "line_ranges": [
+          {
+            "Single": 26
+          },
+          {
+            "Single": 48
+          },
+          {
+            "Range": [
+              51,
+              58
+            ]
+          },
+          {
+            "Range": [
+              60,
+              64
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0abdbcdc8be3e9db789053",
+            "tool_type": "agent",
+            "tool_id": "Edit",
+            "line_ranges": [
+              {
+                "Single": 26
+              },
+              {
+                "Single": 48
+              },
+              {
+                "Range": [
+                  51,
+                  58
+                ]
+              },
+              {
+                "Range": [
+                  60,
+                  64
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "src/test/java/com/digitalsignage/playerserver/service/EventServiceTest.java": [
+      {
+        "hash": "6eb13530647f2303",
+        "line_ranges": [
+          {
+            "Single": 56
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a0abdbcdc8be3e9db789053",
+            "tool_type": "agent",
+            "tool_id": "Edit",
+            "line_ranges": [
+              {
+                "Single": 56
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "remote_transcripts": {
+    "6eb13530647f2303": {
+      "tool": "trae",
+      "conversation_id": "69fb1320596ad8602bff1c13",
+      "session_id": "69fb1320596ad8602bff1c13",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    }
+  }
+}
