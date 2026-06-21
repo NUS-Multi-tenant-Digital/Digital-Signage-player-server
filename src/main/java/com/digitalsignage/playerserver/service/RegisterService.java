@@ -42,11 +42,11 @@ public class RegisterService {
     public RegisterPlayerResponse register(RegisterPlayerRequest req) {
         long now = System.currentTimeMillis();
 
-        String deviceCode = UUID.randomUUID().toString();
+        // 用 device_sn 作为稳定的 device_code，实现按设备幂等：同一台设备反复注册复用同一条 screen
+        String deviceCode = (req.getDeviceSn() != null && !req.getDeviceSn().isEmpty())
+                ? req.getDeviceSn()
+                : UUID.randomUUID().toString();
         Long organizationId = parseOrganizationId(req.getTenantId());
-
-        // Generate random 64-char hex token (32 random bytes → hex string)
-        String deviceToken = generateRandomHexToken();
 
         // Parse resolution from "WIDTHxHEIGHT" format
         Integer resolutionWidth = null;
@@ -59,39 +59,51 @@ public class RegisterService {
             } catch (NumberFormatException ignored) {}
         }
 
-        Screen screen = new Screen();
-        screen.setDeviceCode(deviceCode);
+        // 幂等：已存在则复用，不存在则新建
+        Screen screen = screenRepository.findByDeviceCode(deviceCode).orElseGet(Screen::new);
+        boolean isNew = screen.getId() == null;
+
+        if (isNew) {
+            screen.setDeviceCode(deviceCode);
+            screen.setDeviceToken(generateRandomHexToken());
+            screen.setCreatedAt(LocalDateTime.now());
+        }
         screen.setOrganizationId(organizationId);
         screen.setName(req.getDeviceName());
         screen.setActivationCode(req.getActivationCode());
         screen.setActivationStatus("activated");
-        screen.setDeviceToken(deviceToken);
         screen.setStatus("active");
         screen.setAppVersion(req.getAppVersion());
-        screen.setResolutionWidth(resolutionWidth);
-        screen.setResolutionHeight(resolutionHeight);
+        if (resolutionWidth != null) {
+            screen.setResolutionWidth(resolutionWidth);
+        }
+        if (resolutionHeight != null) {
+            screen.setResolutionHeight(resolutionHeight);
+        }
         screen.setLastHeartbeatAt(LocalDateTime.now());
-        screen.setCreatedAt(LocalDateTime.now());
         screen.setUpdatedAt(LocalDateTime.now());
 
         screenRepository.save(screen);
 
-        PlayerConfig config = new PlayerConfig();
-        config.setScreenId(screen.getId());
-        config.setHeartbeatIntervalSec(30);
-        config.setManifestSyncIntervalSec(60);
-        config.setEventFlushIntervalSec(30);
-        config.setMaxCacheSizeMb(2048);
-        config.setAssetDownloadConcurrency(3);
-        config.setEnableOfflineMode(true);
-        config.setEnableWatchdog(true);
-        config.setEnableScreenshot(false);
-        config.setLogLevel("info");
-        config.setSupportedAssetTypesJson("[\"ASSET_VIDEO\",\"ASSET_IMAGE\"]");
-        config.setCreatedAt(LocalDateTime.now());
-        config.setUpdatedAt(LocalDateTime.now());
-
-        playerConfigRepository.save(config);
+        // 复用已有 PlayerConfig，没有才创建默认配置
+        PlayerConfig config = playerConfigRepository.findByScreenId(screen.getId())
+                .orElseGet(() -> {
+                    PlayerConfig c = new PlayerConfig();
+                    c.setScreenId(screen.getId());
+                    c.setHeartbeatIntervalSec(30);
+                    c.setManifestSyncIntervalSec(60);
+                    c.setEventFlushIntervalSec(30);
+                    c.setMaxCacheSizeMb(2048);
+                    c.setAssetDownloadConcurrency(3);
+                    c.setEnableOfflineMode(true);
+                    c.setEnableWatchdog(true);
+                    c.setEnableScreenshot(false);
+                    c.setLogLevel("info");
+                    c.setSupportedAssetTypesJson("[\"ASSET_VIDEO\",\"ASSET_IMAGE\"]");
+                    c.setCreatedAt(LocalDateTime.now());
+                    c.setUpdatedAt(LocalDateTime.now());
+                    return playerConfigRepository.save(c);
+                });
 
         // Save initial sync state to Redis
         String syncKey = "sync_state:" + screen.getDeviceCode();

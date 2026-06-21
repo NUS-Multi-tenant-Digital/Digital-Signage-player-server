@@ -141,6 +141,9 @@ public class ManifestService {
         manifestData.put("manifest_id", manifest.getManifestId());
         manifestData.put("version", manifest.getVersion());
         manifestData.put("organization_id", manifest.getOrganizationId());
+        // 前端契约字段：tenant_id / location_id
+        manifestData.put("tenant_id", String.valueOf(manifest.getOrganizationId()));
+        manifestData.put("location_id", "");
         manifestData.put("device_id", screen.getDeviceCode());
         manifestData.put("layout_id", manifest.getLayoutId());
         manifestData.put("valid_from", manifest.getValidFrom());
@@ -159,6 +162,9 @@ public class ManifestService {
             manifestData.put("fallback_policy", Map.of());
         }
 
+        // 前端按 asset_id（字符串）查资源，这里把 slot_bindings 里的数字 media_id 投影为 asset_id
+        projectSlotBindingAssetIds(manifestData.get("playback_plan"));
+
         List<Media> mediaList = manifestMediaRepository.findMediaByManifestId(manifest.getManifestId());
         List<ManifestMedia> manifestMediaItems = manifestMediaRepository.findByManifestId(manifest.getManifestId());
         Map<Long, ManifestMedia> mmMap = new HashMap<>();
@@ -166,26 +172,61 @@ public class ManifestService {
             mmMap.put(mm.getMediaId(), mm);
         }
 
-        List<Map<String, Object>> mediaItems = new ArrayList<>();
+        List<Map<String, Object>> assetItems = new ArrayList<>();
         for (Media media : mediaList) {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("media_id", media.getId());
-            m.put("media_type", media.getMediaType());
-            m.put("name", media.getName());
-            m.put("object_key", media.getObjectKey());
-            m.put("file_url", media.getFileUrl());
-            m.put("file_size_bytes", media.getFileSizeBytes());
-            m.put("checksum_sha256", media.getChecksumSha256());
-            m.put("duration_seconds", media.getDurationSeconds());
+            Map<String, Object> a = new LinkedHashMap<>();
+            // asset_id 与 batch-url 保持一致：media.id 的字符串形式
+            a.put("asset_id", String.valueOf(media.getId()));
+            a.put("asset_type", media.getMediaType());
+            a.put("file_name", media.getName());
+            a.put("asset_ref", media.getObjectKey());
+            a.put("file_url", media.getFileUrl());
+            a.put("size_bytes", media.getFileSizeBytes());
+            a.put("sha256", media.getChecksumSha256());
+            a.put("duration_ms", media.getDurationSeconds() == null
+                    ? 0L : media.getDurationSeconds() * 1000L);
             ManifestMedia mm = mmMap.get(media.getId());
-            m.put("required", mm != null && mm.isRequired());
-            m.put("priority", mm != null ? mm.getPriority() : 0);
-            mediaItems.add(m);
+            a.put("required", mm != null && mm.isRequired());
+            a.put("priority", mm != null ? mm.getPriority() : 0);
+            assetItems.add(a);
         }
-        manifestData.put("media", mediaItems);
+        manifestData.put("assets", assetItems);
         manifestData.put("checksum", manifest.getChecksum());
         manifestData.put("generated_at", manifest.getGeneratedAt());
 
         return manifestData;
+    }
+
+    /**
+     * 把 playback_plan.scenes[].slot_bindings[] 里的数字 media_id 投影为字符串 asset_id，
+     * 以匹配前端按 asset_id 查找资源的契约。
+     */
+    @SuppressWarnings("unchecked")
+    private void projectSlotBindingAssetIds(Object playbackPlan) {
+        if (!(playbackPlan instanceof Map)) {
+            return;
+        }
+        Object scenes = ((Map<String, Object>) playbackPlan).get("scenes");
+        if (!(scenes instanceof List)) {
+            return;
+        }
+        for (Object sceneObj : (List<Object>) scenes) {
+            if (!(sceneObj instanceof Map)) {
+                continue;
+            }
+            Object binds = ((Map<String, Object>) sceneObj).get("slot_bindings");
+            if (!(binds instanceof List)) {
+                continue;
+            }
+            for (Object bindObj : (List<Object>) binds) {
+                if (bindObj instanceof Map) {
+                    Map<String, Object> bind = (Map<String, Object>) bindObj;
+                    Object mediaId = bind.get("media_id");
+                    if (mediaId != null && bind.get("asset_id") == null) {
+                        bind.put("asset_id", String.valueOf(mediaId));
+                    }
+                }
+            }
+        }
     }
 }

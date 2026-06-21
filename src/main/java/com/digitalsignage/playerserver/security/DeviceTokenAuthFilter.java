@@ -37,6 +37,12 @@ public class DeviceTokenAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
 
+        // 放行 CORS 预检请求（OPTIONS 不带 Authorization）
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         if (PUBLIC_PATHS.contains(path)) {
             filterChain.doFilter(request, response);
             return;

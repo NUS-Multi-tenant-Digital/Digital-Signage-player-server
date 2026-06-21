@@ -105,11 +105,23 @@ public class HeartbeatRequest {
         @JsonProperty("current_scene_id")
         private String currentSceneId;
 
+        @JsonProperty("current_slot_id")
+        private String currentSlotId;
+
         @JsonProperty("current_asset_id")
         private String currentAssetId;
 
         @JsonProperty("position_ms")
-        private Integer positionMs;
+        private Long positionMs;
+
+        @JsonProperty("duration_ms")
+        private Long durationMs;
+
+        @JsonProperty("last_error_code")
+        private String lastErrorCode;
+
+        @JsonProperty("last_error_message")
+        private String lastErrorMessage;
 
         public String getState() {
             return state;
@@ -127,6 +139,14 @@ public class HeartbeatRequest {
             this.currentSceneId = currentSceneId;
         }
 
+        public String getCurrentSlotId() {
+            return currentSlotId;
+        }
+
+        public void setCurrentSlotId(String currentSlotId) {
+            this.currentSlotId = currentSlotId;
+        }
+
         public String getCurrentAssetId() {
             return currentAssetId;
         }
@@ -135,71 +155,140 @@ public class HeartbeatRequest {
             this.currentAssetId = currentAssetId;
         }
 
-        public Integer getPositionMs() {
+        public Long getPositionMs() {
             return positionMs;
         }
 
-        public void setPositionMs(Integer positionMs) {
+        public void setPositionMs(Long positionMs) {
             this.positionMs = positionMs;
+        }
+
+        public Long getDurationMs() {
+            return durationMs;
+        }
+
+        public void setDurationMs(Long durationMs) {
+            this.durationMs = durationMs;
+        }
+
+        public String getLastErrorCode() {
+            return lastErrorCode;
+        }
+
+        public void setLastErrorCode(String lastErrorCode) {
+            this.lastErrorCode = lastErrorCode;
+        }
+
+        public String getLastErrorMessage() {
+            return lastErrorMessage;
+        }
+
+        public void setLastErrorMessage(String lastErrorMessage) {
+            this.lastErrorMessage = lastErrorMessage;
         }
     }
 
     public static class HealthInfo {
 
-        @JsonProperty("cpu_percent")
-        private Double cpuPercent;
+        @JsonProperty("uptime_sec")
+        private Long uptimeSec;
 
-        @JsonProperty("memory_percent")
-        private Double memoryPercent;
+        @JsonProperty("memory_usage_mb")
+        private Double memoryUsageMb;
 
-        @JsonProperty("disk_free_mb")
-        private Double diskFreeMb;
+        @JsonProperty("storage_free_mb")
+        private Double storageFreeMb;
 
-        private Double temperature;
+        @JsonProperty("storage_total_mb")
+        private Double storageTotalMb;
 
-        public Double getCpuPercent() {
-            return cpuPercent;
+        @JsonProperty("cpu_temperature_celsius")
+        private Double cpuTemperatureCelsius;
+
+        @JsonProperty("app_foreground")
+        private Boolean appForeground;
+
+        public Long getUptimeSec() {
+            return uptimeSec;
         }
 
-        public void setCpuPercent(Double cpuPercent) {
-            this.cpuPercent = cpuPercent;
+        public void setUptimeSec(Long uptimeSec) {
+            this.uptimeSec = uptimeSec;
         }
 
-        public Double getMemoryPercent() {
-            return memoryPercent;
+        public Double getMemoryUsageMb() {
+            return memoryUsageMb;
         }
 
-        public void setMemoryPercent(Double memoryPercent) {
-            this.memoryPercent = memoryPercent;
+        public void setMemoryUsageMb(Double memoryUsageMb) {
+            this.memoryUsageMb = memoryUsageMb;
         }
 
-        public Double getDiskFreeMb() {
-            return diskFreeMb;
+        public Double getStorageFreeMb() {
+            return storageFreeMb;
         }
 
-        public void setDiskFreeMb(Double diskFreeMb) {
-            this.diskFreeMb = diskFreeMb;
+        public void setStorageFreeMb(Double storageFreeMb) {
+            this.storageFreeMb = storageFreeMb;
         }
 
-        public Double getTemperature() {
-            return temperature;
+        public Double getStorageTotalMb() {
+            return storageTotalMb;
         }
 
-        public void setTemperature(Double temperature) {
-            this.temperature = temperature;
+        public void setStorageTotalMb(Double storageTotalMb) {
+            this.storageTotalMb = storageTotalMb;
+        }
+
+        public Double getCpuTemperatureCelsius() {
+            return cpuTemperatureCelsius;
+        }
+
+        public void setCpuTemperatureCelsius(Double cpuTemperatureCelsius) {
+            this.cpuTemperatureCelsius = cpuTemperatureCelsius;
+        }
+
+        public Boolean getAppForeground() {
+            return appForeground;
+        }
+
+        public void setAppForeground(Boolean appForeground) {
+            this.appForeground = appForeground;
         }
     }
 
     public static class CacheInfo {
 
+        @JsonProperty("used_cache_mb")
+        private Double usedCacheMb;
+
+        @JsonProperty("max_cache_mb")
+        private Double maxCacheMb;
+
         @JsonProperty("cached_asset_count")
         private Integer cachedAssetCount;
 
-        @JsonProperty("cache_size_mb")
-        private Double cacheSizeMb;
+        @JsonProperty("missing_required_asset_count")
+        private Integer missingRequiredAssetCount;
 
-        @JsonProperty("cache_hit")
-        private Boolean cacheHit;
+        @JsonProperty("last_cache_cleanup_at")
+        private Long lastCacheCleanupAt;
+
+        public Double getUsedCacheMb() {
+            return usedCacheMb;
+        }
+
+        public void setUsedCacheMb(Double usedCacheMb) {
+            this.usedCacheMb = usedCacheMb;
+        }
+
+        public Double getMaxCacheMb() {
+            return maxCacheMb;
+        }
+
+        public void setMaxCacheMb(Double maxCacheMb) {
+            this.maxCacheMb = maxCacheMb;
+        }
 
         public Integer getCachedAssetCount() {
             return cachedAssetCount;
@@ -209,20 +298,20 @@ public class HeartbeatRequest {
             this.cachedAssetCount = cachedAssetCount;
         }
 
-        public Double getCacheSizeMb() {
-            return cacheSizeMb;
+        public Integer getMissingRequiredAssetCount() {
+            return missingRequiredAssetCount;
         }
 
-        public void setCacheSizeMb(Double cacheSizeMb) {
-            this.cacheSizeMb = cacheSizeMb;
+        public void setMissingRequiredAssetCount(Integer missingRequiredAssetCount) {
+            this.missingRequiredAssetCount = missingRequiredAssetCount;
         }
 
-        public Boolean getCacheHit() {
-            return cacheHit;
+        public Long getLastCacheCleanupAt() {
+            return lastCacheCleanupAt;
         }
 
-        public void setCacheHit(Boolean cacheHit) {
-            this.cacheHit = cacheHit;
+        public void setLastCacheCleanupAt(Long lastCacheCleanupAt) {
+            this.lastCacheCleanupAt = lastCacheCleanupAt;
         }
     }
 
@@ -230,10 +319,17 @@ public class HeartbeatRequest {
 
         private boolean online;
 
-        private String type;
+        @JsonProperty("connection_type")
+        private String connectionType;
 
-        @JsonProperty("signal_quality")
-        private Integer signalQuality;
+        @JsonProperty("failed_request_count")
+        private Integer failedRequestCount;
+
+        @JsonProperty("last_online_at")
+        private Long lastOnlineAt;
+
+        @JsonProperty("last_offline_at")
+        private Long lastOfflineAt;
 
         public boolean isOnline() {
             return online;
@@ -243,20 +339,36 @@ public class HeartbeatRequest {
             this.online = online;
         }
 
-        public String getType() {
-            return type;
+        public String getConnectionType() {
+            return connectionType;
         }
 
-        public void setType(String type) {
-            this.type = type;
+        public void setConnectionType(String connectionType) {
+            this.connectionType = connectionType;
         }
 
-        public Integer getSignalQuality() {
-            return signalQuality;
+        public Integer getFailedRequestCount() {
+            return failedRequestCount;
         }
 
-        public void setSignalQuality(Integer signalQuality) {
-            this.signalQuality = signalQuality;
+        public void setFailedRequestCount(Integer failedRequestCount) {
+            this.failedRequestCount = failedRequestCount;
+        }
+
+        public Long getLastOnlineAt() {
+            return lastOnlineAt;
+        }
+
+        public void setLastOnlineAt(Long lastOnlineAt) {
+            this.lastOnlineAt = lastOnlineAt;
+        }
+
+        public Long getLastOfflineAt() {
+            return lastOfflineAt;
+        }
+
+        public void setLastOfflineAt(Long lastOfflineAt) {
+            this.lastOfflineAt = lastOfflineAt;
         }
     }
 }

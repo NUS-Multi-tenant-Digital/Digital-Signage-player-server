@@ -12,13 +12,13 @@ SET NAMES utf8mb4;
 -- ============================================================
 
 -- Clean up existing seed data
-DELETE FROM command_acks WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
-DELETE FROM commands WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
-DELETE FROM device_event_log WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
+DELETE FROM command_acks WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'LOCAL-DEMO-SN-001' LIMIT 1);
+DELETE FROM commands WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'LOCAL-DEMO-SN-001' LIMIT 1);
+DELETE FROM device_event_log WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'LOCAL-DEMO-SN-001' LIMIT 1);
 DELETE FROM manifest_media WHERE manifest_id = 'manifest_web_lobby_v1';
 DELETE FROM manifests WHERE manifest_id = 'manifest_web_lobby_v1';
-DELETE FROM player_configs WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'device_web_lobby_001' LIMIT 1);
-DELETE FROM screen WHERE device_code = 'device_web_lobby_001';
+DELETE FROM player_configs WHERE screen_id = (SELECT id FROM screen WHERE device_code = 'LOCAL-DEMO-SN-001' LIMIT 1);
+DELETE FROM screen WHERE device_code = 'LOCAL-DEMO-SN-001';
 DELETE FROM media WHERE object_key IN ('mvp/lobby_promo_main.mp4', 'mvp/fallback_poster.png');
 
 -- Insert screen
@@ -35,7 +35,7 @@ INSERT INTO screen (
   resolution_width,
   resolution_height
 ) VALUES (
-  'device_web_lobby_001',
+  'LOCAL-DEMO-SN-001',
   'mvp-device-token-web-lobby-001',
   1,
   'Lobby Web Player',
