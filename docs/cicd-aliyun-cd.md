@@ -56,10 +56,10 @@ Staging 部署后自动运行：
 # 健康检查
 curl -sf http://<staging-ip>:3000/health
 
-# 核心接口验证
+# 核心接口验证（字段需与 RegisterPlayerRequest 一致：device_sn 等）
 curl -sf -X POST http://<staging-ip>:3000/api/v1/player/register \
   -H 'Content-Type: application/json' \
-  -d '{"hardware_id":"cd-smoke","platform":"web","app_version":"1.0.0"}'
+  -d '{"device_sn":"cd-smoke-001","activation_code":"TEST","device_name":"CD Smoke","platform":"web","app_version":"1.0.0","screen_resolution":"1920x1080"}'
 ```
 
 ### 5. 灰度发布阶段（生产环境）
@@ -90,15 +90,26 @@ curl -sf -X POST http://<staging-ip>:3000/api/v1/player/register \
 
 ## 环境变量管理
 
-各环境的 `.env` 文件存储在服务器 `/etc/player-server/.env`，包含：
+各环境的 `.env` 文件存储在服务器 `/etc/player-server/.env`。
+变量名必须与 Spring Boot 应用读取的一致（见仓库根目录 `.env.example`）：
 
 ```env
-PORT=3000
-NODE_ENV=production
-STORAGE_DRIVER=mysql_redis
-MYSQL_URL=mysql://user:pass@<rds-endpoint>:3306/player_application_server
-REDIS_URL=redis://<redis-endpoint>:6379
-JWT_SECRET=<production-secret>
+SERVER_PORT=3000
+
+# MySQL（阿里云 RDS）
+DB_URL=jdbc:mysql://<rds-endpoint>:3306/digital_signage?useSSL=true&serverTimezone=Asia/Shanghai
+DB_USERNAME=<user>
+DB_PASSWORD=<password>
+
+# Redis（阿里云 Redis，通常需要密码）
+REDIS_HOST=<redis-endpoint>
+REDIS_PORT=6379
+REDIS_PASSWORD=<redis-password>
+
+# CORS：必须填真实前端域名，否则浏览器会拦截所有 /api 请求
+APP_CORS_ALLOWED_ORIGINS=https://signage.example.com
+
+# 阿里云 OSS / CDN
 ALIYUN_OSS_ENDPOINT=https://oss-ap-southeast-1.aliyuncs.com
 ALIYUN_OSS_BUCKET=digital-signage-media
 ALIYUN_OSS_REGION=ap-southeast-1
@@ -106,6 +117,32 @@ ALIYUN_OSS_ACCESS_KEY_ID=<key>
 ALIYUN_OSS_ACCESS_KEY_SECRET=<secret>
 STORAGE_PUBLIC_BASE_URL=https://media.digital-signage.ltd
 ```
+
+> 注意：应用不读取 `MYSQL_URL / REDIS_URL / JWT_SECRET / NODE_ENV / STORAGE_DRIVER` 这类变量，
+> 请统一使用上面的 Spring 变量名。
+
+## 数据库初始化（首次部署必做）
+
+镜像内置 `sql/` 但不会自动导入，需在 RDS 上手工执行一次：
+
+```bash
+mysql -h <rds-endpoint> -u <user> -p digital_signage < sql/schema.sql
+mysql -h <rds-endpoint> -u <user> -p digital_signage < sql/mvp_seed.sql
+```
+
+## 前端部署（静态托管）
+
+前端是 Vite 构建的静态产物，需单独部署到 OSS 静态网站 / Nginx / CDN：
+
+```bash
+cd video_player_mvp/frontend
+# 打包前把后端地址写入生产环境变量（HTTPS）
+echo "VITE_API_BASE_URL=https://api.signage.example.com" > .env.production
+npm ci && npm run build
+# 将 dist/ 上传到 OSS 静态网站或部署到 Nginx
+```
+
+前端域名需与后端 `APP_CORS_ALLOWED_ORIGINS` 保持一致；若前端走 HTTPS，后端也必须是 HTTPS。
 
 ## 完整流程
 

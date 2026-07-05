@@ -1,5 +1,6 @@
 package com.digitalsignage.playerserver.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,22 +9,33 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 public class CorsConfig {
 
     /**
-     * 放行前端开发服务器（Vite，默认 5173）的跨域请求。
-     * order 设为最高优先级，确保 CORS 预检在设备 token 校验之前处理。
+     * 允许跨域的前端来源，逗号分隔。通过环境变量 APP_CORS_ALLOWED_ORIGINS 配置，
+     * 例如：https://signage.example.com,https://admin.example.com
+     * 默认放行本地开发服务器（Vite 5173）。
+     * 支持通配模式（如 https://*.example.com），并可与凭证一起使用。
      */
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5173}")
+    private String allowedOrigins;
+
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilter() {
+        List<String> originPatterns = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .collect(Collectors.toList());
+
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173"
-        ));
+        // 用 allowedOriginPatterns 而非 allowedOrigins，既支持精确域名也支持通配符，
+        // 且允许与 allowCredentials(true) 共存。
+        config.setAllowedOriginPatterns(originPatterns);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
